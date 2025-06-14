@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+@plugin "daisyui" {
+	themes:
+		nord --default,
+		sunset --prefersdark;
+	root: ':root';
+	include:;
+	exclude:;
+	prefix:;
+	logs: true;
+}
+
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@layer base {
+	html {
+		font-family: 'Inter', system-ui, sans-serif;
+	}
+
+	body {
+		@apply bg-base-100 text-base-content antialiased;
+		overflow-y: scroll;
+	}
+}
+
+@layer components {
+	.content-image {
+		@apply my-2 max-w-full rounded-lg;
+		max-height: 90vh;
+	}
+
+	.content-video {
+		@apply my-2 max-w-full rounded-lg;
+		max-height: 90vh;
+	}
+
+	.youtube-container {
+		@apply my-4 overflow-hidden rounded-xl;
+		max-width: 100%;
+		aspect-ratio: 16 / 9;
+	}
+
+	.youtube-thumbnail-container {
+		@apply relative h-full w-full cursor-pointer;
+	}
+
+	.youtube-thumbnail {
+		@apply h-full w-full object-cover;
+	}
+
+	.youtube-play-button {
+		@apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform;
+		@apply flex h-16 w-16 items-center justify-center rounded-full bg-black/50;
+		@apply hover:bg-primary/70 hover:border-primary border-2 border-white transition-all;
+	}
+
+	.youtube-play-button::after {
+		content: '';
+		@apply ml-1 border-8 border-transparent border-l-white;
+	}
+
+	.youtube-embed {
+		@apply h-full w-full;
+	}
+
+	.hashtag {
+		@apply text-primary hover:text-secondary font-medium transition-colors;
+	}
+
+	.url-link {
+		@apply text-primary hover:text-secondary break-words transition-colors;
+		word-break: break-word;
+	}
+
+	.mention {
+		@apply text-accent font-medium hover:underline;
+	}
+
+	pre {
+		@apply bg-base-300 my-4 overflow-x-auto rounded-lg p-4 font-mono text-sm;
+	}
+
+	code {
+		@apply bg-base-300 rounded px-1.5 py-0.5 font-mono text-sm;
+	}
+
+	pre code {
+		@apply bg-transparent p-0;
+	}
+
+	.nostr-event-reference {
+		@apply bg-base-200 my-2 rounded-lg;
+	}
+
+	.event-details {
+		@apply p-2;
+	}
+
+	.event-summary {
+		@apply text-accent cursor-pointer text-sm font-medium;
+	}
+
+	.event-data {
+		@apply mt-2 overflow-x-auto text-xs;
+	}
+
+	.centered-content {
+		@apply text-center;
+	}
+}
+
+@layer utilities {
+	.animate-once {
+		animation-iteration-count: 1;
+	}
+}
