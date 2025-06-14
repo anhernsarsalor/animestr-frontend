@@ -34,6 +34,7 @@
 		"@rust-nostr/nostr-sdk": "^0.42.1",
 		"daisyui": "^5.0.43",
 		"dayjs": "^1.11.13",
-		"light-bolt11-decoder": "^3.2.0"
+		"light-bolt11-decoder": "^3.2.0",
+		"nostr-login": "^1.7.11"
 	}
 }

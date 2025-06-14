@@ -64,6 +64,15 @@ export const initSigner = async () => {
       }
     };
     document.addEventListener('nlAuth', eventListener);
-    nostr.pubkey = await newSigner.getPublicKey();
+    async function loadKey() {
+      try {
+        nostr.pubkey = await newSigner.getPublicKey();
+      } catch {
+        document.querySelectorAll('dialog').forEach(dialog => dialog.remove())
+        loadKey()
+      }
+    }
+
+    loadKey();
   });
 };
