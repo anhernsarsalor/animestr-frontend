@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { PublicKey, Filter, Kind, EventId } from '@rust-nostr/nostr-sdk';
+	import { PublicKey, Event } from '@rust-nostr/nostr-sdk';
 	import { decode } from 'light-bolt11-decoder';
 	import UserInfo from './UserInfo.svelte';
-	import { createEventListStore } from '$lib/stores/eventListStore.svelte';
 
-	let { eventId } = $props<{ eventId: EventId }>();
+	let { zapEvents }: { zapEvents: Event[] } = $props();
 
 	function decodeBolt11Amount(bolt11Invoice: string): number {
 		try {
@@ -16,14 +15,6 @@
 		}
 	}
 
-	const zapData = createEventListStore(
-		new Filter().kind(new Kind(9735)).event(eventId),
-		(event) => {
-			const bolt11Tag = event.tags.filter('bolt11')[0]?.asVec();
-			if (!bolt11Tag) return false;
-			return true;
-		}
-	);
 	const zaps = $derived.by<{ pubkey: PublicKey; amount: number; message?: string }[]>(() => {
 		const processedZaps: {
 			pubkey: PublicKey;
@@ -31,7 +22,7 @@
 			message?: string;
 		}[] = [];
 
-		for (const zapReceipt of zapData.events) {
+		for (const zapReceipt of zapEvents) {
 			try {
 				const bolt11Tag = zapReceipt.tags.filter('bolt11')[0]?.asVec();
 				if (!bolt11Tag) return;

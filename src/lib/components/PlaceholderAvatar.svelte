@@ -5,7 +5,7 @@
 </script>
 
 <img
-	class="avatar overflow-hidden rounded-full"
+	class="avatar max-h-[50px] max-w-[50px] overflow-hidden rounded-full"
 	src="https://api.dicebear.com/9.x/avataaars-neutral/svg?seed={pubkey.toHex()}"
 	alt="{pubkey.toBech32()} avatar"
 />

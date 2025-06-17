@@ -8,13 +8,13 @@
 		Nip19Profile,
 		Metadata
 	} from '@rust-nostr/nostr-sdk';
-	import { loadUserMetadata, getColorFromPubkey, getInitials } from '$lib/nostr/user.svelte';
+	import { loadUserMetadata, getColorFromPubkey } from '$lib/nostr/user.svelte';
 	import { page } from '$app/state';
 	import Loading from '$lib/components/Loading.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
 	import PlaceholderAvatar from '$lib/components/PlaceholderAvatar.svelte';
 
-	let userMetadata = $state<Metadata | null>(null);
+	let userMetadata = $state<Metadata | undefined>();
 	let pubkeyObj = $derived(parseUserId(page.params.id));
 	let isLoading = $state(true);
 	let imgError = $state(false);

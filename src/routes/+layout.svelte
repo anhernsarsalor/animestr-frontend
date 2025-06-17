@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { initSigner, nostr } from '$lib/stores/signerStore.svelte';
+	import { init as initNostrLogin } from 'nostr-login';
 	import { onMount } from 'svelte';
 
 	import Sidebar from '$lib/components/Sidebar.svelte';
@@ -9,23 +10,18 @@
 	let loading = true;
 
 	onMount(async () => {
+		await initNostrLogin({
+			methods: ['connect', 'extension', 'local'],
+			title: 'Animestr',
+			description: 'Animestr is a nostr client focused on anime',
+			noBanner: true,
+			localSignup: true,
+			signupRelays: 'wss://anime.nostr1.com'
+		});
 		await initSigner();
 		loading = false;
 	});
 </script>
-
-<svelte:head>
-	<script
-		src="https://www.unpkg.com/nostr-login@latest/dist/unpkg.js"
-		data-methods="connect,extension,local"
-		data-title="Animestr"
-		data-description="Animestr is a nostr client focused on anime"
-		data-follow-npubs="npub1wnanaunumzv96ll0cm5569uzjqn474yj24a559n2h8x3gk9d40rsjxl20f"
-		data-signup-relays="wss://anime.nostr1.com"
-		data-outbox-relays="wss://anime.nostr1.com"
-		data-no-banner="true"
-	></script>
-</svelte:head>
 
 {#if loading}
 	<Loading />

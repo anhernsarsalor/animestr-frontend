@@ -34,40 +34,74 @@ export function getColorFromPubkey(pubkey: PublicKey): string {
   return `hsl(${hue}, ${saturation}%, ${brightness}%)`;
 }
 
+const CACHE_TTL = 30 * 60 * 1000;
+
+const pendingRequests = new Map<string, Promise<Metadata | undefined>>();
+
 export async function loadUserMetadata(
   pubkey: PublicKey,
   onUpdate?: (metadata: Metadata) => void
-): Promise<Metadata | null> {
+): Promise<Metadata | undefined> {
+  const hexKey = pubkey.toHex();
+  const now = Date.now();
+
+  const cached = metadataCache.get(hexKey);
+  if (cached && cached.expiry > now) {
+    onUpdate?.(cached.metadata);
+    return cached.metadata;
+  }
+
+  const existingRequest = pendingRequests.get(hexKey);
+  if (existingRequest) {
+    try {
+      const result = await existingRequest;
+      if (result) onUpdate?.(result);
+      return result;
+    } catch {
+      // Fall through to retry
+    }
+  }
+
+  const requestPromise = loadMetadataInternal(pubkey, hexKey, now);
+  pendingRequests.set(hexKey, requestPromise);
+
   try {
-    const cached = metadataCache.get(pubkey.toHex());
-    if (cached && cached.expiry > Date.now()) {
-      if (onUpdate) onUpdate(cached.metadata);
-      return cached.metadata;
-    }
-
-    const userMetadataInIndexDb = await nostr.db!.metadata(pubkey);
-    if (userMetadataInIndexDb) {
-      metadataCache.set(pubkey.toHex(), {
-        expiry: Date.now() + 30 * 60 * 1000,
-        metadata: userMetadataInIndexDb
-      });
-      if (onUpdate) onUpdate(userMetadataInIndexDb);
-      return userMetadataInIndexDb
-    }
-    const userMetadata = await nostr.client!.fetchMetadata(pubkey, Duration.fromSecs(20));
-
-    if (!userMetadata) return null;
-
-    metadataCache.set(pubkey.toHex(), {
-      expiry: Date.now() + 30 * 60 * 1000,
-      metadata: userMetadata
-    });
-
-    if (onUpdate) onUpdate(userMetadata);
-
-    return userMetadata;
+    const result = await requestPromise;
+    if (result) onUpdate?.(result);
+    return result;
   } catch (err) {
     console.error('Error loading profile:', err);
-    return null;
+    return undefined;
+  } finally {
+    pendingRequests.delete(hexKey);
   }
-} 
+}
+
+async function loadMetadataInternal(
+  pubkey: PublicKey,
+  hexKey: string,
+  now: number
+): Promise<Metadata | undefined> {
+  const userMetadataInIndexDb = await nostr.db!.metadata(pubkey);
+  if (userMetadataInIndexDb) {
+    metadataCache.set(hexKey, {
+      expiry: now + CACHE_TTL,
+      metadata: userMetadataInIndexDb
+    });
+    return userMetadataInIndexDb;
+  }
+
+  const userMetadata = await nostr.client!.fetchMetadata(
+    pubkey,
+    Duration.fromSecs(20)
+  );
+
+  if (userMetadata) {
+    metadataCache.set(hexKey, {
+      expiry: now + CACHE_TTL,
+      metadata: userMetadata
+    });
+  }
+
+  return userMetadata;
+}

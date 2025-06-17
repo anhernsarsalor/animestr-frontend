@@ -2,7 +2,14 @@
 	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
 	import type { AnimeData } from '$lib/nostr/types';
 	import { createEventListStore } from '$lib/stores/eventListStore.svelte';
-	import { Filter, Kind, EventBuilder, Tag } from '@rust-nostr/nostr-sdk';
+	import {
+		Filter,
+		Kind,
+		EventBuilder,
+		Tag,
+		SingleLetterTag,
+		Alphabet
+	} from '@rust-nostr/nostr-sdk';
 	import { initSigner, nostr } from '$lib/stores/signerStore.svelte';
 
 	interface AnimeEntry {
@@ -11,8 +18,7 @@
 	}
 
 	const watchListEvent = createEventListStore(
-		new Filter().kind(new Kind(31111)).identifier('anime-list').author(nostr.pubkey!),
-		() => true
+		new Filter().kind(new Kind(31111)).identifier('anime-list').author(nostr.pubkey!)
 	);
 	const watchList = $derived(watchListEvent.events[0]);
 	const watchListIdentifiers = $derived(
@@ -27,12 +33,14 @@
 			: []
 	);
 
-	const animeData = $derived(
-		createEventListStore(
-			new Filter().kind(new Kind(30010)).identifiers(watchListIdentifiers),
-			() => true
-		)
-	);
+	const filter = $derived.by(() => {
+		let filter = new Filter().kind(new Kind(30010));
+		for (let i of watchListIdentifiers)
+			filter = filter.customTag(SingleLetterTag.lowercase(Alphabet.I), i);
+		return filter;
+	});
+
+	const animeData = $derived(createEventListStore(filter));
 	const identifierToAnimeEventMap = $derived(
 		new Map<string, AnimeData>(
 			animeData.events.map((event) => {

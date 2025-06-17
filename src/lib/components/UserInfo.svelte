@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { loadUserMetadata, getInitials, getColorFromPubkey } from '$lib/nostr/user.svelte';
+	import { loadUserMetadata, getColorFromPubkey } from '$lib/nostr/user.svelte';
 	import { Metadata, type PublicKey } from '@rust-nostr/nostr-sdk';
 	import PlaceholderAvatar from './PlaceholderAvatar.svelte';
 
@@ -12,7 +12,7 @@
 	let isLoadingProfile = $state(true);
 	let imgError = $state(false);
 
-	let metadata = $state<Metadata | null>(null);
+	let metadata = $state<Metadata | undefined>();
 	let username = $derived(metadata?.getName() || '');
 	let avatar = $derived(metadata?.getPicture() || '');
 
