@@ -8,10 +8,14 @@
 		PublicKey.parse
 	);
 
-	const query = [
+	let query = $state([
 		new Filter().kind(Kind.fromStd(KindStandard.TextNote)).hashtag('animestr').limit(20),
 		new Filter().kind(Kind.fromStd(KindStandard.TextNote)).authors(animeCreators).limit(20)
-	];
+	]);
+
+	function reloadQuery() {
+		query = [...query];
+	}
 </script>
 
 <div class="container mx-auto max-w-4xl">
@@ -42,7 +46,7 @@
 		</div>
 	</div>
 
-	<NewPostEditor />
+	<NewPostEditor onPost={reloadQuery} />
 
 	<div class="mb-6">
 		<EventList

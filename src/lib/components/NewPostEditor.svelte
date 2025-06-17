@@ -3,6 +3,12 @@
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import { EventBuilder, Tag } from '@rust-nostr/nostr-sdk';
 
+	let {
+		onPost
+	}: {
+		onPost: () => void;
+	} = $props();
+
 	let content = $state('');
 	let textareaElement: HTMLTextAreaElement;
 
@@ -25,6 +31,7 @@
 			.sign(nostr.signer!);
 		await nostr.client!.sendEvent(newPost);
 		content = '';
+		onPost();
 	}
 </script>
 
