@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Event, Filter, Kind } from '@rust-nostr/nostr-sdk';
+	import { Event, Filter, Kind, KindStandard } from '@rust-nostr/nostr-sdk';
 	import UserInfo from './UserInfo.svelte';
 	import PostContent from './PostContent.svelte';
 	import PostZaps from './PostZaps.svelte';
@@ -36,13 +36,38 @@
 		return allEmoji;
 	});
 
-	const contentEdits = createEventListStore(
-		new Filter().kind(new Kind(1010)).event(event.id),
-		(event) => {
-			return event.tags.filter('alt').some((t) => t.asVec()[1] === 'Content Change Event');
-		}
+	const allEventsRelatedToThisPost = createEventListStore(
+		new Filter()
+			.kinds([
+				new Kind(1010), // edits
+				Kind.fromStd(KindStandard.Reaction),
+				new Kind(9735) // zaps
+			])
+			.event(event.id)
 	);
-	const latestContentEdit = $derived(contentEdits.events[0]);
+
+	const contentEdits = $derived(
+		allEventsRelatedToThisPost.events
+			.filter((event) => event.kind.asU16() === 1010)
+			.filter((event) =>
+				event.tags.filter('alt').some((t) => t.asVec()[1] === 'Content Change Event')
+			)
+			.sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs())
+	);
+
+	const reactions = $derived(
+		allEventsRelatedToThisPost.events
+			.filter((event) => event.kind.asU16() === Kind.fromStd(KindStandard.Reaction).asU16())
+			.sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs())
+	);
+
+	const zapEvents = $derived(
+		allEventsRelatedToThisPost.events
+			.filter((event) => event.kind.asU16() === 9735)
+			.sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs())
+	);
+
+	const latestContentEdit = $derived(contentEdits[0]);
 	const postContent = $derived(latestContentEdit ? latestContentEdit.content : event.content);
 </script>
 
@@ -71,8 +96,8 @@
 		/>
 
 		<div class="card-actions mt-2 justify-end">
-			<PostReactions {event} />
-			<PostZaps eventId={event.id} />
+			<PostReactions reactionEvents={reactions} />
+			<PostZaps {zapEvents} />
 		</div>
 		<div class="card-footer">
 			<details>

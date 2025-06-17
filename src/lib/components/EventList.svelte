@@ -1,9 +1,5 @@
 <script lang="ts">
-	import {
-		createEventListStore,
-		createEventListStoreWithMultipleFilters,
-		type ValidEventFn
-	} from '$lib/stores/eventListStore.svelte';
+	import { createEventListStore, type ValidEventFn } from '$lib/stores/eventListStore.svelte';
 	import Post from '$lib/components/Post.svelte';
 	import { fly } from 'svelte/transition';
 	import type { Filter } from '@rust-nostr/nostr-sdk';

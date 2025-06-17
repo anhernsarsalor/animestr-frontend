@@ -1,18 +1,13 @@
 <script lang="ts">
-	import { createEventListStore } from '$lib/stores/eventListStore.svelte';
-	import { Event, Filter, Kind, KindStandard, PublicKey } from '@rust-nostr/nostr-sdk';
+	import { Event, PublicKey } from '@rust-nostr/nostr-sdk';
 	import UserInfo from './UserInfo.svelte';
-	let { event }: { event: Event } = $props();
+	let { reactionEvents }: { reactionEvents: Event[] } = $props();
 
-	let reactionsStore = createEventListStore(
-		new Filter().kind(Kind.fromStd(KindStandard.Reaction)).event(event.id),
-		() => true
-	);
 	const reactionsData = $derived.by(() => {
 		const reactionAuthors: Record<string, PublicKey[]> = {};
 		const emojiMapping: Record<string, string> = {};
 
-		for (const reaction of reactionsStore.events) {
+		for (const reaction of reactionEvents) {
 			const emojiTags = reaction.tags.filter('emoji');
 			if (emojiTags.length === 1) {
 				const [, emoji, url] = emojiTags[0]!.asVec();

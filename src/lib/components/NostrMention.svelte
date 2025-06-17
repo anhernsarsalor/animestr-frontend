@@ -12,7 +12,7 @@
 	let isLoading = $state(true);
 	let imgError = $state(false);
 	let pubkeyObj: PublicKey = $derived(PublicKey.parse(pubkey));
-	let metadata = $state<Metadata | null>(null);
+	let metadata = $state<Metadata | undefined>();
 	let username = $derived<string | undefined>(metadata?.getName());
 	let avatar = $derived<string | undefined>(metadata?.getPicture());
 

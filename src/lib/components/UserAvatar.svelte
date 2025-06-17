@@ -4,8 +4,8 @@
 	import PlaceholderAvatar from './PlaceholderAvatar.svelte';
 
 	let { pubkey }: { pubkey: PublicKey } = $props();
-	let metadata = $state<Metadata | null>(null);
-	let avatar = $derived(metadata ? metadata.getPicture() : '');
+	let metadata = $state<Metadata | undefined>();
+	let avatar = $derived(metadata?.getPicture() || '');
 
 	$effect(() => {
 		loadUserMetadata(pubkey).then((m) => (metadata = m));

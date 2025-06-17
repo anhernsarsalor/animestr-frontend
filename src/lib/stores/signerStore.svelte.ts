@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-import { BrowserSigner, Client, ClientBuilder, loadWasmAsync, NostrDatabase, NostrSigner, PublicKey } from '@rust-nostr/nostr-sdk';
+import { BrowserSigner, Client, ClientBuilder, loadWasmAsync, NostrDatabase, NostrSigner, Options, PublicKey } from '@rust-nostr/nostr-sdk';
 
 export const nostr = $state<{
   signer: NostrSigner | null;
@@ -52,11 +52,10 @@ export const initSigner = async () => {
       if (customEvent.detail?.type === 'login' || customEvent.detail?.type === 'signup') {
         nostr.signer = NostrSigner.nip07(newSigner);
         nostr.db = await NostrDatabase.indexeddb("animestr");
-        nostr.client = new ClientBuilder().signer(nostr.signer).database(nostr.db).build();
+        nostr.client = new ClientBuilder().signer(nostr.signer).database(nostr.db).opts(new Options().autoconnect(true).automaticAuthentication(true).gossip(true)).build();
         await nostr.client.addRelay('wss://anime.nostr1.com');
-        await nostr.client.addRelay('wss://relay.damus.io');
-        await nostr.client.addRelay('wss://lightningrelay.com');
-        await nostr.client.addRelay('wss://nostr21.com/');
+        await nostr.client.addDiscoveryRelay('wss://relay.damus.io');
+        await nostr.client.addDiscoveryRelay('wss://nostr21.com/');
         await nostr.client.addWriteRelay('wss://sendit.nosflare.com');
         await nostr.client.connect();
         resolve(true);

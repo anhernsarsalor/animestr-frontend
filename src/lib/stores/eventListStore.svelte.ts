@@ -1,7 +1,7 @@
 import { Duration, Filter, Timestamp, type Event } from "@rust-nostr/nostr-sdk";
 import { nostr } from "./signerStore.svelte";
+import { unique } from "$lib/utils";
 
-// export type FetchEventsFn = (params: { initial: boolean; args?: any[] }) => Promise<{ events: Event[]; lastTimestamp: Timestamp | null; hasMore: boolean }>;
 export type ValidEventFn = (event: Event) => boolean;
 
 export type eventListStore = {
@@ -15,7 +15,7 @@ export type eventListStore = {
   loadMore: (...args: any[]) => Promise<void>;
 };
 
-export function createEventListStore(filter: Filter | Filter[], validEventFn: ValidEventFn): eventListStore {
+export function createEventListStore(filter: Filter | Filter[], validEventFn: ValidEventFn = () => true): eventListStore {
   if (Array.isArray(filter)) {
     return createEventListStoreWithMultipleFilters(filter, validEventFn);
   }
@@ -38,10 +38,10 @@ export function createEventListStore(filter: Filter | Filter[], validEventFn: Va
     const newerRelayEvents = (await nostr.client!.fetchEvents(filterAfterTimestamp, Duration.fromSecs(20))).toVec().filter(validEventFn).filter(event => !store.events.some(e => e.id.toHex() === event.id.toHex()));
     const olderRelayEvents = (await nostr.client!.fetchEvents(filterBeforeTimestamp, Duration.fromSecs(20))).toVec().filter(validEventFn).filter(event => !store.events.some(e => e.id.toHex() === event.id.toHex()));
     if (newerRelayEvents.length > 0) {
-      store.events = newerRelayEvents.concat(store.events).sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs());
+      store.events = unique(newerRelayEvents.concat(store.events).sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs()), e => e.id.toHex());
     }
     if (olderRelayEvents.length > 0) {
-      store.events = olderRelayEvents.concat(store.events).sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs());
+      store.events = unique(olderRelayEvents.concat(store.events).sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs()), e => e.id.toHex());
       store.hasMore = true;
     } else {
       store.hasMore = false;
@@ -55,7 +55,7 @@ export function createEventListStore(filter: Filter | Filter[], validEventFn: Va
     store.error = null;
     try {
       const cachedEventsMatchingFilter = (await nostr.db!.query(filter as Filter)).toVec().filter(validEventFn);
-      store.events = cachedEventsMatchingFilter;
+      store.events = unique(cachedEventsMatchingFilter, e => e.id.toHex());
       store.lastEventTimestamp = latestTimeStamp(store.events);
       store.earliestEventTimeStamp = earliestTimestamp(store.events);
       store.hasMore = true;
@@ -119,7 +119,7 @@ export function createEventListStoreWithMultipleFilters(filters: Filter[], valid
       )
       .sort((a, b) => b.createdAt.asSecs() - a.createdAt.asSecs());
 
-    combinedStore.events = allEvents;
+    combinedStore.events = unique(allEvents, e => e.id.toHex());
     combinedStore.isLoading = stores.some(store => store.isLoading);
     combinedStore.isLoadingMore = stores.some(store => store.isLoadingMore);
     combinedStore.hasMore = stores.some(store => store.hasMore);
