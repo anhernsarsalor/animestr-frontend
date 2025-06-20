@@ -13,14 +13,10 @@ export const ndk = new NDKSvelte({
 });
 
 export const nostr = $state<{
-  signer: NostrSigner | null;
-  client: Client | null;
-  db: NostrDatabase | null;
-  pubkey: PublicKey | null;
+  activeUser: NDKUser | undefined;
+  pubkey: string | null;
 }>({
-  signer: null,
-  client: null,
-  db: null,
+  activeUser: undefined,
   pubkey: null
 });
 
@@ -37,12 +33,10 @@ const waitTillWindowNostr = () => {
 
 export const initSigner = async () => {
   if (typeof window === 'undefined') return;
-  if (nostr.signer) return;
+  if (ndk.signer) return;
   if (!window.nostr) {
     await waitTillWindowNostr();
   }
-  await loadWasmAsync();
-  const newSigner = new BrowserSigner();
 
   if (typeof document === 'undefined') {
     return;
