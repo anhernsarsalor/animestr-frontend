@@ -1,6 +1,7 @@
 import { NDKNip07Signer, NDKUser } from "@nostr-dev-kit/ndk";
 import NDKSvelte from "@nostr-dev-kit/ndk-svelte/svelte5";
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
+import { debounce } from "$lib/utils.svelte";
 
 export const ndk = new NDKSvelte({
   explicitRelayUrls: ["wss://anime.nostr1.com", 'wss://relay.nostr.band', "wss://anime.nostr1.com", "wss://relay.nostr.wirednet.jp", "wss://at.nostrworks.com", "wss://atlas.nostr.land"],
@@ -12,10 +13,14 @@ export const ndk = new NDKSvelte({
 });
 
 export const nostr = $state<{
-  activeUser: NDKUser | undefined;
-  pubkey: string | null;
+  signer: NostrSigner | null;
+  client: Client | null;
+  db: NostrDatabase | null;
+  pubkey: PublicKey | null;
 }>({
-  activeUser: undefined,
+  signer: null,
+  client: null,
+  db: null,
   pubkey: null
 });
 
@@ -32,40 +37,45 @@ const waitTillWindowNostr = () => {
 
 export const initSigner = async () => {
   if (typeof window === 'undefined') return;
+  if (nostr.signer) return;
+  if (!window.nostr) {
+    await waitTillWindowNostr();
+  }
+  await loadWasmAsync();
+  const newSigner = new BrowserSigner();
+
   if (typeof document === 'undefined') {
     return;
   }
-  if (ndk.signer) return;
-
-  if (!window.nostr)
-    await waitTillWindowNostr();
 
   await new Promise(async (resolve) => {
+    async function saveSigner() {
+      const signer = new NDKNip07Signer(1000, ndk);
+      ndk.signer = signer;
+      await signer.user().then((user) => user.fetchProfile());
+      ndk.connect();
+      nostr.activeUser = ndk.activeUser!;
+      document.removeEventListener('nlAuth', eventListener);
+      resolve(true);
+    };
+
     const eventListener = async (e: Event) => {
       const customEvent = e as CustomEvent<{ type: string }>;
-      if (customEvent.detail?.type === 'login' || customEvent.detail?.type === 'signup') {
-        const signer = new NDKNip07Signer(1000, ndk);
-        ndk.signer = signer;
-        await signer.user().then((user) => user.fetchProfile());
-        ndk.connect();
-        nostr.activeUser = ndk.activeUser!;
-        resolve(true);
-        document.removeEventListener('nlAuth', eventListener);
-      }
+      if (customEvent.detail?.type === 'login' || customEvent.detail?.type === 'signup')
+        await saveSigner();
     };
+
     document.addEventListener('nlAuth', eventListener);
-    async function loadKey() {
+
+    const loadKey = debounce(async () => {
       try {
         const pubkey = await window.nostr?.getPublicKey();
-        if (!pubkey) {
-          document.querySelectorAll('dialog').forEach(dialog => dialog.remove())
-          loadKey()
-        }
-      } catch {
-        document.querySelectorAll('dialog').forEach(dialog => dialog.remove())
-        loadKey()
-      }
-    }
+        if (pubkey)
+          await saveSigner();
+      } catch { }
+      document.querySelectorAll('dialog').forEach(dialog => dialog.remove())
+      loadKey()
+    }, 100);
 
     loadKey();
   });
