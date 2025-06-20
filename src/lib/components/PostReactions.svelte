@@ -1,16 +1,31 @@
 <script lang="ts">
-	import { Event, PublicKey } from '@rust-nostr/nostr-sdk';
 	import UserInfo from './UserInfo.svelte';
-	let { reactionEvents }: { reactionEvents: Event[] } = $props();
+	import { NDKSubscriptionCacheUsage, NDKUser, type NDKEvent } from '@nostr-dev-kit/ndk';
+	import { ndk } from '$lib/stores/signerStore.svelte';
+
+	let { event }: { event: NDKEvent } = $props();
+
+	let reactionEvents = ndk.$subscribe(
+		[
+			{
+				'#e': [event.id],
+				kinds: [7]
+			}
+		],
+		{
+			closeOnEose: false,
+			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+		}
+	);
 
 	const reactionsData = $derived.by(() => {
-		const reactionAuthors: Record<string, PublicKey[]> = {};
+		const reactionAuthors: Record<string, NDKUser[]> = {};
 		const emojiMapping: Record<string, string> = {};
 
 		for (const reaction of reactionEvents) {
-			const emojiTags = reaction.tags.filter('emoji');
+			const emojiTags = reaction.tags.filter((x) => x[0] === 'emoji');
 			if (emojiTags.length === 1) {
-				const [, emoji, url] = emojiTags[0]!.asVec();
+				const [, emoji, url] = emojiTags[0]!;
 				emojiMapping[emoji] = url;
 				if (!reactionAuthors[emoji]) {
 					reactionAuthors[emoji] = [];
@@ -81,7 +96,7 @@
 					>
 						<div class="flex flex-col gap-2">
 							{#each authorList as author}
-								<UserInfo pubkey={author} />
+								<UserInfo user={author} />
 							{/each}
 						</div>
 					</div>

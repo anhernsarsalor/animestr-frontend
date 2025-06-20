@@ -1,60 +1,39 @@
 <script lang="ts">
-	import { loadUserMetadata, getColorFromPubkey } from '$lib/nostr/user.svelte';
-	import { Metadata, type PublicKey } from '@rust-nostr/nostr-sdk';
+	import { getColorFromPubkey, profileSubscription } from '$lib/utils.svelte';
 	import PlaceholderAvatar from './PlaceholderAvatar.svelte';
+	import { type NDKUser } from '@nostr-dev-kit/ndk';
 
 	const {
-		pubkey
+		user
 	}: {
-		pubkey: PublicKey;
+		user: NDKUser;
 	} = $props();
 
-	let isLoadingProfile = $state(true);
-	let imgError = $state(false);
+	let { profile } = profileSubscription(user)();
 
-	let metadata = $state<Metadata | undefined>();
-	let username = $derived(metadata?.getName() || '');
-	let avatar = $derived(metadata?.getPicture() || '');
-
-	$effect(() => {
-		if (!pubkey) return;
-
-		isLoadingProfile = true;
-
-		loadUserMetadata(pubkey)
-			.then((newMetadata) => {
-				if (newMetadata) metadata = newMetadata;
-				isLoadingProfile = false;
-			})
-			.catch((err) => {
-				console.error('Error loading profile:', err);
-				isLoadingProfile = false;
-			});
-	});
-
-	function handleImgError() {
-		imgError = true;
-	}
-
-	const shortNpub = pubkey.toBech32().slice(0, 6) + '...' + pubkey.toBech32().slice(-6);
-	const avatarColor = getColorFromPubkey(pubkey);
+	const shortNpub = $derived(user.npub.slice(0, 6) + '...' + user.npub.slice(-6));
+	const metadata = $derived(profile || null);
+	const username = $derived(metadata?.displayName || metadata?.name || shortNpub);
+	const avatar = $derived(metadata?.picture || '');
+	const isLoadingProfile = $derived(!metadata);
+	const avatarColor = $derived(getColorFromPubkey(user.pubkey));
 </script>
 
 <div class="flex items-center gap-3">
-	<a href={`/user/${pubkey.toBech32()}`} class="avatar transition-opacity hover:opacity-80">
+	<a href={`/user/${user.npub}`} class="avatar transition-opacity hover:opacity-80">
 		<div
 			class="h-12 w-12 overflow-hidden rounded-full border-3"
 			style="border: 2px solid {avatarColor};"
 		>
-			{#if avatar && !imgError}
-				<img src={avatar} alt="User avatar" onerror={handleImgError} class="object-cover" />
+			{#if avatar}
+				<img src={avatar} alt="User avatar" class="object-cover" />
 			{:else}
-				<PlaceholderAvatar {pubkey} />
+				<PlaceholderAvatar {user} />
 			{/if}
 		</div>
 	</a>
 
-	<a href={`/user/${pubkey.toBech32()}`} class="flex flex-col transition-opacity hover:opacity-80">
+	<a href={`/user/${user.npub}`} class="flex flex-col transition-opacity hover:opacity-80">
 		<span class="leading-tight font-semibold">
 			{#if username}
 				{username}

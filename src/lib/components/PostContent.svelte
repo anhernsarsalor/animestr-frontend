@@ -6,6 +6,7 @@
 	import ContentVideo from './ContentVideo.svelte';
 	import NostrEventReference from './NostrEventReference.svelte';
 	import AnimeReference from './AnimeReference.svelte';
+	import AnimestrLogo from './AnimestrLogo.svelte';
 
 	interface Props {
 		content: string;
@@ -30,6 +31,8 @@
 	{#each processedContent as segment}
 		{#if segment.type === 'text'}
 			<span>{@html segment.content}</span>
+		{:else if segment.type === 'animestr-logo'}
+			<AnimestrLogo inline />
 		{:else if segment.type === 'image'}
 			<ContentImage src={segment.content} />
 		{:else if segment.type === 'hashtag'}

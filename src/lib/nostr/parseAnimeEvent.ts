@@ -1,7 +1,7 @@
-import type { Event } from '@rust-nostr/nostr-sdk';
+import type { NDKEvent } from '@nostr-dev-kit/ndk';
 import type { AnimeData } from './types';
 
-export function parseAnimeEvent(event: Event): AnimeData | null {
+export function parseAnimeEvent(event: NDKEvent): AnimeData | null {
   if (!event || !event.tags) return null;
 
   const data: AnimeData = {
@@ -19,8 +19,8 @@ export function parseAnimeEvent(event: Event): AnimeData | null {
     thumbnail: ''
   };
 
-  event.tags.asVec().forEach((tag) => {
-    const [tagType, ...values] = tag.asVec();
+  event.tags.forEach((tag) => {
+    const [tagType, ...values] = tag;
 
     switch (tagType) {
       case 'title':

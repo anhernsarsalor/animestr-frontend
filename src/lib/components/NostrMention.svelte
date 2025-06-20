@@ -1,56 +1,33 @@
 <script lang="ts">
-	import { Metadata, PublicKey } from '@rust-nostr/nostr-sdk';
-	import { loadUserMetadata } from '$lib/nostr/user.svelte';
 	import PlaceholderAvatar from './PlaceholderAvatar.svelte';
+	import { getUserFromMention, profileSubscription } from '$lib/utils.svelte';
 
 	interface Props {
 		pubkey: string;
 	}
 
 	let { pubkey }: Props = $props();
+	let user = $derived(getUserFromMention(pubkey));
+	let { profile } = $derived(profileSubscription(user!)());
 
-	let isLoading = $state(true);
-	let imgError = $state(false);
-	let pubkeyObj: PublicKey = $derived(PublicKey.parse(pubkey));
-	let metadata = $state<Metadata | undefined>();
-	let username = $derived<string | undefined>(metadata?.getName());
-	let avatar = $derived<string | undefined>(metadata?.getPicture());
+	$inspect(profile);
 
-	$effect(() => {
-		try {
-			loadUserData();
-		} catch (e) {
-			console.warn('Invalid pubkey for NostrMention:', pubkey);
-			isLoading = false;
-		}
-	});
-
-	async function loadUserData() {
-		try {
-			isLoading = true;
-			metadata = await loadUserMetadata(pubkeyObj);
-		} catch (e) {
-			console.error('Error loading user metadata:', e);
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	function handleImgError() {
-		imgError = true;
-	}
+	let isLoading = $derived(!profile);
+	let avatar = $derived(profile?.picture || '');
+	let username = $derived(
+		profile?.displayName || profile?.name || pubkey.slice(0, 6) + '...' + pubkey.slice(-6)
+	);
 </script>
 
-<a href={`/user/${pubkeyObj.toBech32()}`} class="mention inline-flex items-center hover:underline">
-	{#if avatar && !imgError}
+<a href={`/user/${user?.pubkey}`} class="mention inline-flex items-center hover:underline">
+	{#if avatar}
 		<img
 			src={avatar}
 			alt="User avatar"
-			onerror={handleImgError}
 			class="mr-1 h-4 w-4 flex-shrink-0 rounded-full object-cover"
 		/>
 	{:else}
-		<PlaceholderAvatar pubkey={pubkeyObj} />
+		<PlaceholderAvatar {user} />
 	{/if}
 
 	{#if isLoading}
@@ -61,7 +38,7 @@
 		</span>
 	{:else}
 		<span class="text-xs font-medium">
-			@{pubkeyObj.toBech32().slice(0, 6)}...{pubkeyObj.toBech32().slice(-6)}
+			@{user!.npub.slice(0, 6)}...{user!.npub.slice(-6)}
 		</span>
 	{/if}
 </a>

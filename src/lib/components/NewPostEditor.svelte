@@ -1,7 +1,7 @@
 <script lang="ts">
 	import UserAvatar from './UserAvatar.svelte';
-	import { nostr } from '$lib/stores/signerStore.svelte';
-	import { EventBuilder, Tag } from '@rust-nostr/nostr-sdk';
+	import { ndk, nostr } from '$lib/stores/signerStore.svelte';
+	import { NDKEvent } from '@nostr-dev-kit/ndk';
 
 	let content = $state('');
 	let textareaElement: HTMLTextAreaElement;
@@ -19,11 +19,12 @@
 	});
 
 	async function createPost() {
-		const animestrHashtag = Tag.hashtag('animestr');
-		const newPost = await EventBuilder.textNote(content)
-			.tags([animestrHashtag])
-			.sign(nostr.signer!);
-		await nostr.client!.sendEvent(newPost);
+		const newPost = new NDKEvent(ndk, {
+			kind: 1,
+			content,
+			tags: [['#t', 'animestr']]
+		});
+		await newPost.publish();
 		content = '';
 	}
 </script>
@@ -31,7 +32,7 @@
 <div class="card bg-base-200/50 border-base-300 mb-6 border shadow-sm">
 	<div class="card-body p-4">
 		<div class="flex gap-4">
-			<UserAvatar pubkey={nostr.pubkey!} />
+			<UserAvatar user={nostr.activeUser} />
 
 			<div class="flex-1">
 				<textarea

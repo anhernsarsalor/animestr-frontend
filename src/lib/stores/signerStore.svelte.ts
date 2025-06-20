@@ -1,24 +1,21 @@
-interface NostrLoginAPI {
-  getPublicKey(): Promise<string | null>;
-}
+import { NDKNip07Signer, NDKUser } from "@nostr-dev-kit/ndk";
+import NDKSvelte from "@nostr-dev-kit/ndk-svelte/svelte5";
+import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 
-declare global {
-  interface Window {
-    nostr: NostrLoginAPI;
-  }
-}
-
-import { BrowserSigner, Client, ClientBuilder, loadWasmAsync, NostrDatabase, NostrSigner, Options, PublicKey } from '@rust-nostr/nostr-sdk';
+export const ndk = new NDKSvelte({
+  explicitRelayUrls: ["wss://anime.nostr1.com", 'wss://relay.nostr.band', "wss://anime.nostr1.com", "wss://relay.nostr.wirednet.jp", "wss://at.nostrworks.com", "wss://atlas.nostr.land"],
+  devWriteRelayUrls: ['wss://sendit.nosflare.com'],
+  autoConnectUserRelays: true,
+  enableOutboxModel: true,
+  autoBlacklistInvalidRelays: true,
+  cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'animestr-cache', profileCacheSize: 1e6, zapperCacheSize: 1e6, nip05CacheSize: 1e6, eventCacheSize: 1e6, eventTagsCacheSize: 1e6, saveSig: true }),
+});
 
 export const nostr = $state<{
-  signer: NostrSigner | null;
-  client: Client | null;
-  db: NostrDatabase | null;
-  pubkey: PublicKey | null;
+  activeUser: NDKUser | undefined;
+  pubkey: string | null;
 }>({
-  signer: null,
-  client: null,
-  db: null,
+  activeUser: undefined,
   pubkey: null
 });
 
@@ -35,29 +32,23 @@ const waitTillWindowNostr = () => {
 
 export const initSigner = async () => {
   if (typeof window === 'undefined') return;
-  if (nostr.signer) return;
-  if (!window.nostr) {
-    await waitTillWindowNostr();
-  }
-  await loadWasmAsync();
-  const newSigner = new BrowserSigner();
-
   if (typeof document === 'undefined') {
     return;
   }
+  if (ndk.signer) return;
+
+  if (!window.nostr)
+    await waitTillWindowNostr();
 
   await new Promise(async (resolve) => {
     const eventListener = async (e: Event) => {
       const customEvent = e as CustomEvent<{ type: string }>;
       if (customEvent.detail?.type === 'login' || customEvent.detail?.type === 'signup') {
-        nostr.signer = NostrSigner.nip07(newSigner);
-        nostr.db = await NostrDatabase.indexeddb("animestr");
-        nostr.client = new ClientBuilder().signer(nostr.signer).database(nostr.db).opts(new Options().autoconnect(true).automaticAuthentication(true).gossip(true)).build();
-        await nostr.client.addRelay('wss://anime.nostr1.com');
-        await nostr.client.addDiscoveryRelay('wss://relay.damus.io');
-        await nostr.client.addDiscoveryRelay('wss://nostr21.com/');
-        await nostr.client.addWriteRelay('wss://sendit.nosflare.com');
-        await nostr.client.connect();
+        const signer = new NDKNip07Signer(1000, ndk);
+        ndk.signer = signer;
+        await signer.user().then((user) => user.fetchProfile());
+        ndk.connect();
+        nostr.activeUser = ndk.activeUser!;
         resolve(true);
         document.removeEventListener('nlAuth', eventListener);
       }
@@ -65,7 +56,11 @@ export const initSigner = async () => {
     document.addEventListener('nlAuth', eventListener);
     async function loadKey() {
       try {
-        nostr.pubkey = await newSigner.getPublicKey();
+        const pubkey = await window.nostr?.getPublicKey();
+        if (!pubkey) {
+          document.querySelectorAll('dialog').forEach(dialog => dialog.remove())
+          loadKey()
+        }
       } catch {
         document.querySelectorAll('dialog').forEach(dialog => dialog.remove())
         loadKey()

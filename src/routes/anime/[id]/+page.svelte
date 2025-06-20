@@ -1,59 +1,20 @@
 <script lang="ts">
-	import { nostr } from '$lib/stores/signerStore.svelte';
-	import { Alphabet, Duration, Event, Filter, Kind, SingleLetterTag } from '@rust-nostr/nostr-sdk';
+	import { ndk } from '$lib/stores/signerStore.svelte';
 	import { page } from '$app/state';
-	import PostContent from '$lib/components/PostContent.svelte';
 	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
-	import type { AnimeData } from '$lib/nostr/types';
 	import AnimeAltTitles from '$lib/components/AnimeAltTitles.svelte';
 	import AnimeGenres from '$lib/components/AnimeGenres.svelte';
 	import AnimeIdentifiers from '$lib/components/AnimeIdentifiers.svelte';
+	import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 
-	let event = $state<Event | null>(null);
-	let isLoading = $state(true);
-	let error = $state<string | null>(null);
-
-	let animeData = $state<AnimeData | null>(null);
-
-	$effect(() => {
-		const id = page.params.id;
-		if (id) {
-			fetchEvent(id);
-		}
-	});
-
-	async function fetchEvent(id: string) {
-		if (id.startsWith('d:')) {
-			id = id.replace('d:', '');
-		}
-
-		isLoading = true;
-		error = null;
-		event = null;
-		animeData = null;
-
-		try {
-			const filter = new Filter()
-				.kind(new Kind(30010))
-				.customTag(SingleLetterTag.lowercase(Alphabet.I), id)
-				.limit(1);
-			const results = await nostr.client?.fetchEvents(filter, Duration.fromSecs(10));
-			const eventsArr = results ? results.toVec() : [];
-
-			if (eventsArr.length > 0) {
-				event = eventsArr[0];
-				animeData = parseAnimeEvent(event);
-				isLoading = false;
-			} else {
-				error = 'Event not found';
-				isLoading = false;
-			}
-		} catch (err: unknown) {
-			console.error('Error fetching event:', err);
-			error = err instanceof Error ? err.message : String(err);
-			isLoading = false;
-		}
-	}
+	let events = $derived(
+		ndk.$subscribe([{ kinds: [30010 as NDKKind], '#i': [page.params.id] }], {
+			closeOnEose: false,
+			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+		})
+	);
+	let animeData = $derived(events[0] ? parseAnimeEvent(events[0]) : null);
+	let isLoading = $derived(!animeData);
 </script>
 
 <svelte:head>
@@ -71,29 +32,7 @@
 				<span class="loading loading-spinner loading-lg text-primary"></span>
 				<p class="ml-4">Loading anime data...</p>
 			</div>
-		{:else if error}
-			<div class="alert alert-error shadow-lg">
-				<div>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-6 w-6 flex-shrink-0 stroke-current"
-						fill="none"
-						viewBox="0 0 24 24"
-						><path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/></svg
-					>
-					<div>
-						<h3 class="font-bold">Error!</h3>
-						<div class="text-xs">{error}</div>
-						<div class="text-xs">Event ID: {page.params.id}</div>
-					</div>
-				</div>
-			</div>
-		{:else if event && animeData}
+		{:else if animeData}
 			<div class="card bg-base-100 shadow-xl">
 				<div class="bg-primary text-primary-content p-0">
 					<div class="grid grid-cols-1 md:grid-cols-4">
@@ -160,15 +99,6 @@
 
 					{#if animeData.identifiers && animeData.identifiers.length > 0}
 						<AnimeIdentifiers identifiers={animeData.identifiers} />
-					{/if}
-
-					{#if event.content}
-						<div class="border-base-300 mb-6 border-b pb-6">
-							<h3 class="mb-2 text-lg font-semibold">Description</h3>
-							<div class="prose">
-								<PostContent content={event.content} emoji={{}} />
-							</div>
-						</div>
 					{/if}
 				</div>
 			</div>

@@ -1,53 +1,68 @@
 <script lang="ts">
 	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
 	import type { AnimeData } from '$lib/nostr/types';
-	import { createEventListStore } from '$lib/stores/eventListStore.svelte';
-	import {
-		Filter,
-		Kind,
-		EventBuilder,
-		Tag,
-		SingleLetterTag,
-		Alphabet
-	} from '@rust-nostr/nostr-sdk';
-	import { initSigner, nostr } from '$lib/stores/signerStore.svelte';
+	import { initSigner, ndk } from '$lib/stores/signerStore.svelte';
+	import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 
 	interface AnimeEntry {
 		identifier: string;
 		score: number;
 	}
 
-	const watchListEvent = createEventListStore(
-		new Filter().kind(new Kind(31111)).identifier('anime-list').author(nostr.pubkey!)
+	const watchListEvent = $derived(
+		ndk.$subscribe(
+			[
+				{
+					kinds: [31111 as NDKKind],
+					'#d': ['anime-list'],
+					authors: [ndk.signer?.pubkey!]
+				}
+			],
+			{
+				closeOnEose: false,
+				cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+			}
+		)
 	);
-	const watchList = $derived(watchListEvent.events[0]);
+
+	const watchList = $derived(watchListEvent[0]);
 	const watchListIdentifiers = $derived(
-		watchList?.tags.filter('i').map((tag) => tag.asVec()[1]) || []
+		watchList?.tags.filter((e) => e[0] === 'i').map((tag) => tag[1]) || []
 	);
 	const watchListEntries = $derived<AnimeEntry[]>(
 		watchList
-			? watchList.tags.filter('i').map((tag) => {
-					const [_, identifier, score] = tag.asVec();
-					return { identifier, score: parseFloat(score) };
-				})
+			? watchList.tags
+					.filter((e) => e[0] === 'i')
+					.map((tag) => {
+						const [_, identifier, score] = tag;
+						return { identifier, score: parseFloat(score) };
+					})
 			: []
 	);
 
-	const filter = $derived.by(() => {
-		let filter = new Filter().kind(new Kind(30010));
-		for (let i of watchListIdentifiers)
-			filter = filter.customTag(SingleLetterTag.lowercase(Alphabet.I), i);
-		return filter;
-	});
+	const animeInWatchList = $derived(
+		ndk.$subscribe(
+			[
+				{
+					kinds: [30010 as NDKKind],
+					'#i': watchListIdentifiers
+				}
+			],
+			{
+				closeOnEose: false,
+				cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+			}
+		)
+	);
 
-	const animeData = $derived(createEventListStore(filter));
+	const animeData = $derived(animeInWatchList.map(parseAnimeEvent).filter((e) => e !== null));
 	const identifierToAnimeEventMap = $derived(
 		new Map<string, AnimeData>(
-			animeData.events.map((event) => {
-				const identifier = event.tags
-					.filter('i')
-					.find((t) => watchListIdentifiers.includes(t.asVec()[1]));
-				return [identifier!.asVec()[1], parseAnimeEvent(event)!];
+			animeData.map((event) => {
+				return [
+					watchListIdentifiers.find((t) => event.identifiers.some((i) => i.value === t))!,
+					event
+				];
 			})
 		)
 	);
@@ -58,15 +73,15 @@
 
 	async function saveList() {
 		await initSigner();
-		const identifierTag = Tag.identifier('anime-list');
-		const descriptionTag = Tag.description('My anime list');
-		const animeMentions = watchListEntries.map((anime) =>
-			Tag.parse(['i', anime.identifier, normalizeScore(anime.score)])
-		);
-		const listEvent = await new EventBuilder(new Kind(31111), '')
-			.tags([identifierTag, descriptionTag, ...animeMentions])
-			.sign(nostr.signer!);
-		nostr.client!.sendEvent(listEvent);
+		const listEvent = new NDKEvent(ndk, {
+			kind: 31111,
+			tags: [
+				['d', 'anime-list'],
+				['description', 'My anime list'],
+				...watchListEntries.map((anime) => ['i', anime.identifier, normalizeScore(anime.score)])
+			]
+		});
+		await listEvent.publishReplaceable();
 	}
 </script>
 
