@@ -73,17 +73,15 @@
 			<PostZaps {event} />
 		</div>
 		<div class="card-footer">
-			<details bind:open={repliesVisible}>
-				<summary>Replies</summary>
-				{#if repliesVisible}
-					<PostReplies parent={event} />
-				{:else}
-					<Loading inline />
-				{/if}
-			</details>
-			<details>
-				<summary>Json</summary>
-				<pre>{JSON.stringify(event.rawEvent())}</pre>
+			<details class="collapse-arrow collapse" bind:open={repliesVisible}>
+				<summary class="collapse-title">Replies</summary>
+				<div class="collapse-content">
+					{#if repliesVisible}
+						<PostReplies parent={event} />
+					{:else}
+						<Loading inline />
+					{/if}
+				</div>
 			</details>
 		</div>
 	</div>
