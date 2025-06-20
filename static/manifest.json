@@ -1,0 +1,11 @@
+{
+  "name": "Animestr",
+  "description": "An anime focused nostr client",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
