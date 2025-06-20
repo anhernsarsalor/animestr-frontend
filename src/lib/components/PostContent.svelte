@@ -7,69 +7,104 @@
 	import NostrEventReference from './NostrEventReference.svelte';
 	import AnimeReference from './AnimeReference.svelte';
 	import AnimestrLogo from './AnimestrLogo.svelte';
+	import PostContent from './PostContent.svelte';
 
 	interface Props {
 		content: string;
 		originalContent: string;
 		emoji: Record<string, string>;
 		isEdited?: boolean;
+		isSensitive?: boolean;
 	}
 
-	let { content, originalContent, emoji, isEdited }: Props = $props();
+	let { content, originalContent, emoji, isEdited, isSensitive }: Props = $props();
 
 	let showOriginal = $state(false);
-
-	function toggleContent() {
-		showOriginal = !showOriginal;
-	}
+	let showSensitive = $state(false);
 
 	let contentToProcess = $derived(showOriginal ? originalContent : content);
 	let processedContent = $derived(contentProcessor.process(contentToProcess, emoji));
 </script>
 
-<div class="content">
-	{#each processedContent as segment}
-		{#if segment.type === 'text'}
-			<span>{@html segment.content}</span>
-		{:else if segment.type === 'animestr-logo'}
-			<AnimestrLogo inline />
-		{:else if segment.type === 'image'}
-			<ContentImage src={segment.content} />
-		{:else if segment.type === 'hashtag'}
-			<a class="hashtag" href={`/hashtag/${segment.content}`}>#{segment.content}</a>
-		{:else if segment.type === 'url'}
-			<a class="url-link" href={segment.content} target="_blank">{segment.content}</a>
-		{:else if segment.type === 'mention'}
-			<NostrMention pubkey={segment.content} />
-		{:else if segment.type === 'youtube'}
-			<YouTubeEmbed videoId={segment.content} />
-		{:else if segment.type === 'video'}
-			<ContentVideo src={segment.content} />
-		{:else if segment.type === 'markdown'}
-			{#if segment.data.element === 'link' && 'href' in segment.data}
-				<a href={segment.data.href as string} target="_blank" class="url-link">{segment.content}</a>
-			{:else if segment.data.element === 'anime'}
-				<AnimeReference animeId={segment.data.content} source={segment.data.source} />
-			{:else}
-				<svelte:element this={segment.data.element}>{segment.content}</svelte:element>
-			{/if}
-		{:else if segment.type === 'event'}
-			<NostrEventReference eventId={segment.content} />
-		{:else if segment.type === 'anime'}
-			<AnimeReference animeId={segment.data.id} source={segment.data.source} />
-		{:else}
-			{JSON.stringify(segment)}
-		{/if}
-	{/each}
-</div>
-
-{#if isEdited}
-	<span class="text-base-content/60 text-xs font-medium">
-		{showOriginal ? 'Original' : 'Edited'}
-		<button onclick={toggleContent} class="text-primary ml-2 hover:underline">
-			{showOriginal ? 'Show edited' : 'Show original'}
+{#if isSensitive && !showSensitive}
+	<div class="relative">
+		<!-- Completely hidden content -->
+		<div class="invisible">
+			<PostContent {originalContent} {content} {emoji} {isEdited} />
+		</div>
+		<button
+			class="bg-base-300 absolute inset-0 flex cursor-pointer items-center justify-center rounded-lg"
+			onclick={() => (showSensitive = true)}
+		>
+			<div class="text-center">
+				<svg
+					class="text-base-content/60 mx-auto mb-2 h-12 w-12"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+					/>
+				</svg>
+				<p class="font-medium">Sensitive Content</p>
+				<p class="text-base-content/60 text-sm">Click to view</p>
+			</div>
 		</button>
-	</span>
+	</div>
+{:else}
+	<div class="content">
+		{#each processedContent as segment}
+			{#if segment.type === 'text'}
+				<span>{@html segment.content}</span>
+			{:else if segment.type === 'animestr-logo'}
+				<AnimestrLogo inline />
+			{:else if segment.type === 'image'}
+				<ContentImage src={segment.content} />
+			{:else if segment.type === 'hashtag'}
+				<a class="hashtag" href={`/hashtag/${segment.content}`}>#{segment.content}</a>
+			{:else if segment.type === 'url'}
+				<a class="url-link" href={segment.content} target="_blank">{segment.content}</a>
+			{:else if segment.type === 'mention'}
+				<NostrMention pubkey={segment.content} />
+			{:else if segment.type === 'youtube'}
+				<YouTubeEmbed videoId={segment.content} />
+			{:else if segment.type === 'video'}
+				<ContentVideo src={segment.content} />
+			{:else if segment.type === 'markdown'}
+				{#if segment.data.element === 'link' && 'href' in segment.data}
+					<a href={segment.data.href as string} target="_blank" class="url-link"
+						>{segment.content}</a
+					>
+				{:else if segment.data.element === 'anime'}
+					<AnimeReference animeId={segment.data.content} source={segment.data.source} />
+				{:else}
+					<svelte:element this={segment.data.element}>{segment.content}</svelte:element>
+				{/if}
+			{:else if segment.type === 'event'}
+				<NostrEventReference eventId={segment.content} />
+			{:else if segment.type === 'anime'}
+				<AnimeReference animeId={segment.data.id} source={segment.data.source} />
+			{:else}
+				{JSON.stringify(segment)}
+			{/if}
+		{/each}
+	</div>
+
+	{#if isEdited}
+		<span class="text-base-content/60 text-xs font-medium">
+			{showOriginal ? 'Original' : 'Edited'}
+			<button
+				onclick={() => (showOriginal = !showOriginal)}
+				class="text-primary ml-2 hover:underline"
+			>
+				{showOriginal ? 'Show edited' : 'Show original'}
+			</button>
+		</span>
+	{/if}
 {/if}
 
 <style>

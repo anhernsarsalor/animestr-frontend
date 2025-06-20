@@ -11,6 +11,10 @@
 	import PostReplies from './PostReplies.svelte';
 	import Loading from './Loading.svelte';
 
+	const usersWhoPostNSFWWithoutMarks = [
+		'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
+	];
+
 	const { event }: { event: NDKEvent } = $props();
 	dayjs.extend(relativeTime);
 
@@ -40,8 +44,11 @@
 			.sort((a, b) => b.created_at! - a.created_at!)
 	);
 	let postContent = $derived(contentEdits.length > 0 ? contentEdits[0].content : event.content);
-
 	let repliesVisible = $state(false);
+	let isSensitiveContent = $state(
+		!!event.tags.find((t) => t[0] === 'sensitive-content') ||
+			usersWhoPostNSFWWithoutMarks.includes(event.author.pubkey)
+	);
 </script>
 
 <div
@@ -65,6 +72,7 @@
 			originalContent={event.content}
 			content={postContent}
 			isEdited={contentEdits.length > 0}
+			isSensitive={isSensitiveContent}
 			emoji={emoji()}
 		/>
 
