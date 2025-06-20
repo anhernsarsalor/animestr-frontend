@@ -43,7 +43,7 @@ async function cacheInto(cache, event) {
       throw new Error('invalid response from fetch');
     }
 
-    if (response.status === 200)
+    if ((response.status >= 200 && response.status < 400) || response.status === 0)
       cache.put(event.request, response.clone());
 
     return response;
