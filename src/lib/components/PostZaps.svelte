@@ -1,42 +1,45 @@
 <script lang="ts">
-	import { PublicKey, Event } from '@rust-nostr/nostr-sdk';
-	import { decode } from 'light-bolt11-decoder';
 	import UserInfo from './UserInfo.svelte';
+	import { NDKSubscriptionCacheUsage, NDKUser, type NDKEvent } from '@nostr-dev-kit/ndk';
+	import { ndk } from '$lib/stores/signerStore.svelte';
+	import { decodeBolt11Amount, getUserFromMention } from '$lib/utils.svelte';
 
-	let { zapEvents }: { zapEvents: Event[] } = $props();
+	let { event }: { event: NDKEvent } = $props();
 
-	function decodeBolt11Amount(bolt11Invoice: string): number {
-		try {
-			const decoded = decode(bolt11Invoice);
-			return parseInt(decoded.sections.find((s) => s.name === 'amount')?.value || '0', 10) / 1000; // Convert millisats to sats
-		} catch (error) {
-			console.error('Error decoding bolt11:', error);
-			return 0;
+	let zapEvents = ndk.$subscribe(
+		[
+			{
+				kinds: [9735],
+				'#e': [event.id]
+			}
+		],
+		{
+			closeOnEose: false,
+			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
 		}
-	}
+	);
 
-	const zaps = $derived.by<{ pubkey: PublicKey; amount: number; message?: string }[]>(() => {
+	const zaps = $derived.by<{ user: NDKUser; amount: number; message?: string }[]>(() => {
 		const processedZaps: {
-			pubkey: PublicKey;
+			user: NDKUser;
 			amount: number;
 			message?: string;
 		}[] = [];
 
 		for (const zapReceipt of zapEvents) {
 			try {
-				const bolt11Tag = zapReceipt.tags.filter('bolt11')[0]?.asVec();
-				if (!bolt11Tag) return;
+				const bolt11Invoice = zapReceipt.tags.find((x) => x[0] === 'bolt11')?.[1];
+				if (!bolt11Invoice) return;
 
-				const bolt11Invoice = bolt11Tag[1];
 				const amount = decodeBolt11Amount(bolt11Invoice);
 
-				const descriptionTag = zapReceipt.tags.filter('description')[0]?.asVec();
+				const description = zapReceipt.tags.find((x) => x[0] === 'description')?.[1];
 				let senderPubkey = '';
 				let message = '';
 
-				if (descriptionTag) {
+				if (description) {
 					try {
-						const zapRequest = JSON.parse(descriptionTag[1]);
+						const zapRequest = JSON.parse(description);
 						senderPubkey = zapRequest.pubkey;
 						message = zapRequest.content || '';
 					} catch (e) {
@@ -45,15 +48,15 @@
 				}
 
 				if (!senderPubkey) {
-					const pTag = zapReceipt.tags.filter('P')[0]?.asVec();
+					const pTag = zapReceipt.tags.find((x) => x[0] === 'P')?.[1];
 					if (pTag) {
-						senderPubkey = pTag[1];
+						senderPubkey = pTag;
 					}
 				}
 
 				if (amount > 0 && senderPubkey) {
 					processedZaps.push({
-						pubkey: PublicKey.parse(senderPubkey),
+						user: getUserFromMention(senderPubkey),
 						amount,
 						message: message || undefined
 					});
@@ -72,7 +75,7 @@
 		<div
 			class="bg-secondary border-secondary text-secondary-content flex items-center gap-3 rounded-full border px-3 py-2 shadow-sm"
 		>
-			<UserInfo pubkey={zap.pubkey} />
+			<UserInfo user={zap.user} />
 			<div class="flex flex-col">
 				<span class="text-sm font-medium">
 					{zap.amount.toLocaleString()} sats

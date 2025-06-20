@@ -31,7 +31,9 @@
 		"vite-plugin-devtools-json": "^0.1.1"
 	},
 	"dependencies": {
-		"@rust-nostr/nostr-sdk": "^0.42.1",
+		"@nostr-dev-kit/ndk": "^2.14.30",
+		"@nostr-dev-kit/ndk-cache-dexie": "^2.6.31",
+		"@nostr-dev-kit/ndk-svelte": "^2.4.35",
 		"daisyui": "^5.0.43",
 		"dayjs": "^1.11.13",
 		"light-bolt11-decoder": "^3.2.0",

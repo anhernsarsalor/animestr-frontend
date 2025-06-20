@@ -1,17 +1,20 @@
 <script lang="ts">
 	import EventList from '$lib/components/EventList.svelte';
-	import { Filter, Kind, KindStandard } from '@rust-nostr/nostr-sdk';
-	import { page } from '$app/state';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
+	import { ndk } from '$lib/stores/signerStore.svelte.js';
+	import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 
 	const { data } = $props();
 	let hashtag = $derived(data.hashtag || '');
 
-	$inspect(hashtag);
-
-	const query = $derived(
-		new Filter().kind(Kind.fromStd(KindStandard.TextNote)).hashtag(hashtag).limit(20)
+	let events = $derived(
+		ndk.$subscribe([{ kinds: [1], '#t': [hashtag.toLowerCase()] }], {
+			closeOnEose: false,
+			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+		})
 	);
+
+	let filteredEvents = $derived(events.filter(filterNoReplies));
 </script>
 
 <svelte:head>
@@ -57,8 +60,7 @@
 	<div class="space-y-4">
 		{#key hashtag}
 			<EventList
-				{query}
-				filterFn={filterNoReplies}
+				events={filteredEvents}
 				header={`Posts tagged with #${hashtag}`}
 				emptyMessage={`There are no posts with the hashtag #${hashtag}.`}
 			/>

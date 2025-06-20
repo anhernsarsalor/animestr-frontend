@@ -35,7 +35,7 @@
 			</div>
 			<div class="navbar-end">
 				<a href="/watch-list">
-					<UserAvatar pubkey={nostr.pubkey!} />
+					<UserAvatar user={nostr.activeUser} />
 				</a>
 			</div>
 		</header>

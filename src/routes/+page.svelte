@@ -1,21 +1,27 @@
 <script lang="ts">
+	import AnimestrLogo from '$lib/components/AnimestrLogo.svelte';
 	import EventList from '$lib/components/EventList.svelte';
 	import NewPostEditor from '$lib/components/NewPostEditor.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
-	import { Filter, Kind, KindStandard, PublicKey } from '@rust-nostr/nostr-sdk';
+	import { ndk } from '$lib/stores/signerStore.svelte';
 
-	const animeCreators = ['bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280'].map(
-		PublicKey.parse
+	const animeCreators = [
+		'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280',
+		'4a8eb573952d3a8a4d1f65d2652b8a5cc9a03d1ac716d8192b4bcc6615968c60'
+	];
+
+	const events = ndk.$subscribe(
+		[
+			{ kinds: [1], '#t': ['animestr'] },
+			{ kinds: [1], authors: animeCreators }
+		],
+		{
+			closeOnEose: false,
+			autoStart: true
+		}
 	);
 
-	let query = $state([
-		new Filter().kind(Kind.fromStd(KindStandard.TextNote)).hashtag('animestr').limit(20),
-		new Filter().kind(Kind.fromStd(KindStandard.TextNote)).authors(animeCreators).limit(20)
-	]);
-
-	function reloadQuery() {
-		query = [...query];
-	}
+	const filteredEvents = $derived(events.filter(filterNoReplies));
 </script>
 
 <div class="container mx-auto max-w-4xl">
@@ -37,23 +43,15 @@
 				</svg>
 			</label>
 			<div class="ml-2 lg:ml-0">
-				<h1 class="text-2xl font-bold">
-					<span class="text-secondary">Anime</span><span class="text-primary">str</span>
-					<span class="badge badge-accent badge-sm ml-2">Alpha</span>
-				</h1>
+				<AnimestrLogo />
 				<p class="text-sm opacity-70">Explore anime discussions on Nostr</p>
 			</div>
 		</div>
 	</div>
 
-	<NewPostEditor onPost={reloadQuery} />
+	<NewPostEditor />
 
 	<div class="mb-6">
-		<EventList
-			{query}
-			filterFn={filterNoReplies}
-			header="Recent Posts"
-			emptyMessage="No events found."
-		/>
+		<EventList events={filteredEvents} header="Recent Posts" emptyMessage="No events found." />
 	</div>
 </div>

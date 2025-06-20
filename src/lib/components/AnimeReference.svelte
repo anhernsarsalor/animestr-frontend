@@ -1,83 +1,22 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { Alphabet, Duration, Event, Filter, Kind, SingleLetterTag } from '@rust-nostr/nostr-sdk';
-	import { nostr } from '$lib/stores/signerStore.svelte';
+	import { ndk } from '$lib/stores/signerStore.svelte';
+	import { NDKSubscriptionCacheUsage, type NDKKind } from '@nostr-dev-kit/ndk';
+	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
 
 	let { animeId, source, event = null } = $props();
 
-	let loadedEvent = $state<Event | null>(event);
-	let isLoading = $state(!event);
-	let error = $state<string | null>(null);
-	let animeData = $state<{
-		title: string;
-		type: string;
-		image: string;
-		thumbnail: string;
-		year: string;
-		season: string;
-	} | null>(event ? parseEventTags(event) : null);
+	let loadedEvents = $derived(
+		event
+			? [event]
+			: ndk.$subscribe([{ kinds: [30010 as NDKKind], '#i': [`${source}:${animeId}`] }], {
+					closeOnEose: false,
+					cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+				})
+	);
 
-	function parseEventTags(event: Event) {
-		if (!event || !event.tags) return null;
-
-		const data = {
-			title: '',
-			type: '',
-			image: '',
-			thumbnail: '',
-			year: '',
-			season: ''
-		};
-
-		event.tags.asVec().forEach((tag) => {
-			const [tagType, ...values] = tag.asVec();
-
-			switch (tagType) {
-				case 'title':
-					data.title = values[0];
-					break;
-				case 'type':
-					data.type = values[0];
-					break;
-				case 'image':
-					data.image = values[0];
-					break;
-				case 'thumbnail':
-					data.thumbnail = values[0];
-					break;
-				case 'year':
-					data.year = values[0];
-					break;
-				case 'season':
-					data.season = values[0];
-					break;
-			}
-		});
-
-		return data;
-	}
-
-	async function fetchEvent(id: string) {
-		isLoading = true;
-		error = null;
-		loadedEvent = null;
-		animeData = null;
-
-		const filter = new Filter()
-			.kind(new Kind(30010))
-			.customTag(SingleLetterTag.lowercase(Alphabet.I), id);
-		const event = await nostr.client!.fetchEvents(filter, Duration.fromSecs(20))!;
-		loadedEvent = event.toVec()[0];
-		animeData = parseEventTags(loadedEvent);
-		isLoading = false;
-	}
-
-	onMount(() => {
-		if (!event) {
-			const lookupId = `${source}:${animeId}`;
-			fetchEvent(lookupId);
-		}
-	});
+	let loadedEvent = $derived(loadedEvents[0]);
+	let animeData = $derived(loadedEvent ? parseAnimeEvent(loadedEvent) : null);
+	let isLoading = $derived(!loadedEvent);
 </script>
 
 <a href={`/anime/${source}:${animeId}`} class="my-4 block">
@@ -88,25 +27,6 @@
 			<div class="card-body items-center justify-center p-4">
 				<span class="loading loading-spinner loading-md text-primary"></span>
 				<p class="text-base-content/70 mt-2 text-sm">Loading anime...</p>
-			</div>
-		{:else if error}
-			<div class="card-body p-4">
-				<div class="alert alert-error shadow-sm">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-6 w-6 shrink-0 stroke-current"
-						fill="none"
-						viewBox="0 0 24 24"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-					<span>{error}</span>
-				</div>
 			</div>
 		{:else if animeData}
 			{#if animeData.thumbnail || animeData.image}

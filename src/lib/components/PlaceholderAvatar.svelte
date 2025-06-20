@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { PublicKey } from '@rust-nostr/nostr-sdk';
+	import type { NDKUser } from '@nostr-dev-kit/ndk';
 
-	let { pubkey }: { pubkey: PublicKey } = $props();
+	let { user }: { user?: NDKUser } = $props();
 </script>
 
 <img
 	class="avatar max-h-[50px] max-w-[50px] overflow-hidden rounded-full"
-	src="https://api.dicebear.com/9.x/avataaars-neutral/svg?seed={pubkey.toHex()}"
-	alt="{pubkey.toBech32()} avatar"
+	src="https://api.dicebear.com/9.x/avataaars-neutral/svg?seed={user?.pubkey}"
+	alt="{user?.npub} avatar"
 />

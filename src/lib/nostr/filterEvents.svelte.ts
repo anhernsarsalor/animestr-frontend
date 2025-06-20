@@ -1,8 +1,9 @@
-import type { Event } from "@rust-nostr/nostr-sdk";
+import type { NDKEvent } from "@nostr-dev-kit/ndk";
 
-export function filterNoReplies(event: Event) {
-  const eTags = event.tags.filter('e');
-  for (const eTag of eTags)
-    if (eTag.isReply() || eTag.isRoot()) return false;
+export function filterNoReplies(event: NDKEvent) {
+  for (const tag of event.tags) {
+    if (tag[0] !== 'e') continue;
+    if (tag[3] === 'reply' || tag[3] === 'root') return false;
+  }
   return true;
 }

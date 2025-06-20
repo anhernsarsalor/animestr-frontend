@@ -1,75 +1,101 @@
 <script lang="ts">
-	import { createEventListStore, type ValidEventFn } from '$lib/stores/eventListStore.svelte';
 	import Post from '$lib/components/Post.svelte';
 	import { fly } from 'svelte/transition';
-	import type { Filter } from '@rust-nostr/nostr-sdk';
+	import type { NDKEvent } from '@nostr-dev-kit/ndk';
 
 	let {
-		query,
-		filterFn,
+		events,
 		header = '',
-		emptyMessage = 'No events found',
-		showObserver = true
+		emptyMessage = 'No events found'
 	}: {
-		query: Filter | Filter[];
-		filterFn: ValidEventFn;
+		events: NDKEvent[];
 		header?: string;
 		emptyMessage?: string;
-		showObserver?: boolean;
 	} = $props();
 
-	const store = createEventListStore(query, filterFn);
+	let start = $state(0);
+	let end = $state(20);
 
-	let observerTarget = $state<HTMLElement | undefined>();
+	let slice = $derived(events.slice(start, end));
+
+	let div = $state<HTMLElement | undefined>();
+
+	// let observerTarget = $state<HTMLElement | undefined>();
+
+	// $effect(() => {
+	// 	if (observerTarget && showObserver) {
+	// 		const observer = new IntersectionObserver(
+	// 			(entries) => {
+	// 				if (entries[0].isIntersecting && !store.isLoadingMore) {
+	// 					store.loadMore();
+	// 				}
+	// 			},
+	// 			{ rootMargin: '200px' }
+	// 		);
+	// 		observer.observe(observerTarget);
+	// 		return () => observer.disconnect();
+	// 	}
+	// });
+
+	function previous() {
+		start = start - 20;
+		end = end - 20;
+	}
+
+	function next() {
+		start = start + 20;
+		end = end + 20;
+	}
 
 	$effect(() => {
-		if (observerTarget && showObserver && store.hasMore) {
-			const observer = new IntersectionObserver(
-				(entries) => {
-					if (entries[0].isIntersecting && !store.isLoadingMore && store.hasMore) {
-						store.loadMore();
-					}
-				},
-				{ rootMargin: '200px' }
-			);
-			observer.observe(observerTarget);
-			return () => observer.disconnect();
-		}
+		window.scrollTo({
+			top: 0,
+			left: 0,
+			behavior: 'smooth'
+		});
+		console.log(start, end);
 	});
 
-	$inspect(store);
+	// $inspect(store);
 </script>
 
 {#if header}
 	<h2 class="mb-4 text-xl font-bold">{header}</h2>
 {/if}
 
-{#if store.isLoading}
+{#if events.length === 0}
 	<div class="flex justify-center py-8">
 		<span class="loading loading-spinner loading-lg text-primary"></span>
+		<div class="text-base-content/70 py-8 text-center">{emptyMessage}</div>
 	</div>
-{:else if store.error}
-	<div class="alert alert-error">
-		<span>{store.error}</span>
-	</div>
-{:else if store.events.length === 0}
-	<div class="text-base-content/70 py-8 text-center">{emptyMessage}</div>
 {:else}
-	<div class="space-y-4">
-		{#each store.events as event}
+	<div class="space-y-4" bind:this={div}>
+		<div class="flex justify-between">
+			{#if start > 0 && events.length > end}
+				<button class="btn btn-primary" onclick={previous}>Previous</button>
+			{:else}
+				<span></span>
+			{/if}
+			{#if events.length > end}
+				<button class="btn btn-secondary" onclick={next}>Next</button>
+			{/if}
+		</div>
+		{#each slice as event}
 			{#key event.id}
-				<Post {event} />
+				<div in:fly>
+					<Post {event} />
+				</div>
 			{/key}
 		{/each}
-	</div>
-	{#if store.isLoadingMore}
-		<div transition:fly class="flex justify-center py-4">
-			<span class="loading loading-spinner loading-md text-primary"></span>
+		<div class="flex justify-between">
+			{#if start > 0 && events.length > end}
+				<button class="btn btn-primary" onclick={previous}>Previous</button>
+			{:else}
+				<span></span>
+			{/if}
+			{#if events.length > end}
+				<button class="btn btn-secondary" onclick={next}>Next</button>
+			{/if}
 		</div>
-	{/if}
-	{#if store.hasMore && showObserver}
-		<div bind:this={observerTarget} class="h-1 w-full"></div>
-	{:else if store.events.length > 0}
-		<div class="text-base-content/70 py-4 text-center text-sm">You've reached the end</div>
-	{/if}
+	</div>
 {/if}

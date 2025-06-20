@@ -1,4 +1,4 @@
-import { EventId, Nip19Event } from "@rust-nostr/nostr-sdk";
+import type { NDKEventId } from "@nostr-dev-kit/ndk";
 
 const HTML_ENTITIES = {
   '<': '&lt;',
@@ -8,6 +8,7 @@ const HTML_ENTITIES = {
 } as const;
 
 const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|gif|webp|bmp|svg)(?:[?#][^\s]*)?$/i;
+const VIDEO_EXTENSIONS = /\.(webm|mp4)(?:[?#][^\s]*)?$/i;
 const URL_REGEX = /(?<!(?:src|href|data-src|data-href)\s*=\s*["'])\b(https?:\/\/[^\s<>"'\])}]+)/gi;
 const HASHTAG_REGEX = /(?<!&[#a-zA-Z0-9]*?)#(\w+)(?![;\w])/g;
 const MENTION_REGEX = /nostr:(npub1[a-z0-9]{59})/g;
@@ -20,7 +21,7 @@ export type ContentSegment = {
   data?: Record<string, any>;
 } | {
   type: "event";
-  content: EventId;
+  content: NDKEventId;
 };
 
 interface MatchResult {
@@ -57,6 +58,7 @@ export interface ContentProcessor {
   createSegmentsFromMatches: (text: string, matches: MatchResult[]) => ContentSegment[];
   addParagraphs: (segments: ContentSegment[]) => ContentSegment[];
   processEmoji: (segments: ContentSegment[], emoji: Record<string, string>) => ContentSegment[];
+  processAnimestrLogo: (segments: ContentSegment[]) => ContentSegment[];
 }
 
 function createTextSegment(content: string): ContentSegment {
@@ -134,8 +136,31 @@ export const contentProcessor: ContentProcessor = {
     segments = this.processYoutubeLinks(segments);
     segments = this.addParagraphs(segments);
     segments = this.processEmoji(segments, emoji);
+    segments = this.processAnimestrLogo(segments);
 
     return segments;
+  },
+
+  processAnimestrLogo(segments: ContentSegment[]): ContentSegment[] {
+    return segments.flatMap(segment => {
+      if (segment.type !== 'text') return segment;
+      if (segment.content.toLocaleLowerCase() === 'animestr') {
+        return { type: 'animestr-logo', content: '' };
+      }
+      const match = segment.content.match(/animestr/i);
+      if (match) {
+        const segments = segment.content.split(/animestr/i).map(createTextSegment);
+        const interleavedSegments: ContentSegment[] = [];
+        segments.forEach((seg, index) => {
+          interleavedSegments.push(seg);
+          if (index < segments.length - 1) {
+            interleavedSegments.push({ type: 'animestr-logo', content: '' });
+          }
+        });
+        return interleavedSegments;
+      }
+      return segment;
+    });
   },
 
   processEmoji(segments: ContentSegment[], emoji: Record<string, string>): ContentSegment[] {
@@ -254,7 +279,11 @@ export const contentProcessor: ContentProcessor = {
 
       return processTextWithRegex(segment.content, URL_REGEX, (match) => {
         const cleanedUrl = cleanUrlTrailingPunctuation(match[1]);
-        const segmentType = IMAGE_EXTENSIONS.test(cleanedUrl) ? 'image' : 'url';
+        if (cleanedUrl.startsWith('https://njump.me/nevent1')) {
+          const event = cleanedUrl.slice('https://njump.me/'.length);
+          return { type: 'event', content: event };
+        }
+        const segmentType = IMAGE_EXTENSIONS.test(cleanedUrl) ? 'image' : VIDEO_EXTENSIONS.test(cleanedUrl) ? 'video' : 'url';
         return { type: segmentType, content: cleanedUrl };
       });
     });
@@ -309,11 +338,17 @@ export const contentProcessor: ContentProcessor = {
     return segments.flatMap(segment => {
       if (segment.type !== 'text') return [segment];
 
-      return processTextWithRegex(segment.content, HASHTAG_REGEX, (match) => ({
-        type: 'hashtag',
-        content: match[1],
-        data: { tag: match[1] }
-      }));
+      return processTextWithRegex(segment.content, HASHTAG_REGEX, (match) => {
+        if (match[1] === 'animestr')
+          return {
+            type: 'animestr-logo'
+          }
+        return ({
+          type: 'hashtag',
+          content: match[1],
+          data: { tag: match[1] }
+        });
+      });
     });
   },
 
@@ -341,7 +376,7 @@ export const contentProcessor: ContentProcessor = {
 
           return processTextWithRegex(mentionSegment.content, EVENT_REGEX, (match) => ({
             type: 'event',
-            content: Nip19Event.fromBech32(match[1]).eventId(),
+            content: match[1]
           }));
         });
 
