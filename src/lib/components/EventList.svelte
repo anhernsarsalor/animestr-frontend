@@ -2,6 +2,7 @@
 	import Post from '$lib/components/Post.svelte';
 	import { fly } from 'svelte/transition';
 	import type { NDKEvent } from '@nostr-dev-kit/ndk';
+	import Loading from './Loading.svelte';
 
 	let {
 		events,
@@ -19,23 +20,6 @@
 	let slice = $derived(events.slice(start, end));
 
 	let div = $state<HTMLElement | undefined>();
-
-	// let observerTarget = $state<HTMLElement | undefined>();
-
-	// $effect(() => {
-	// 	if (observerTarget && showObserver) {
-	// 		const observer = new IntersectionObserver(
-	// 			(entries) => {
-	// 				if (entries[0].isIntersecting && !store.isLoadingMore) {
-	// 					store.loadMore();
-	// 				}
-	// 			},
-	// 			{ rootMargin: '200px' }
-	// 		);
-	// 		observer.observe(observerTarget);
-	// 		return () => observer.disconnect();
-	// 	}
-	// });
 
 	function previous() {
 		start = start - 20;
@@ -55,8 +39,6 @@
 		});
 		console.log(start, end);
 	});
-
-	// $inspect(store);
 </script>
 
 {#if header}
@@ -65,7 +47,7 @@
 
 {#if events.length === 0}
 	<div class="flex justify-center py-8">
-		<span class="loading loading-spinner loading-lg text-primary"></span>
+		<Loading inline />
 		<div class="text-base-content/70 py-8 text-center">{emptyMessage}</div>
 	</div>
 {:else}

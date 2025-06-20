@@ -6,6 +6,7 @@
 	import AnimeGenres from '$lib/components/AnimeGenres.svelte';
 	import AnimeIdentifiers from '$lib/components/AnimeIdentifiers.svelte';
 	import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+	import Loading from '$lib/components/Loading.svelte';
 
 	let events = $derived(
 		ndk.$subscribe([{ kinds: [30010 as NDKKind], '#i': [page.params.id] }], {
@@ -29,7 +30,7 @@
 
 		{#if isLoading}
 			<div class="flex items-center justify-center p-10">
-				<span class="loading loading-spinner loading-lg text-primary"></span>
+				<Loading inline />
 				<p class="ml-4">Loading anime data...</p>
 			</div>
 		{:else if animeData}

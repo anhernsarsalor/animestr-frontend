@@ -3,6 +3,8 @@
 	import { ndk, nostr } from '$lib/stores/signerStore.svelte';
 	import { NDKEvent } from '@nostr-dev-kit/ndk';
 
+	let { replyTo }: { replyTo?: NDKEvent } = $props();
+
 	let content = $state('');
 	let textareaElement: HTMLTextAreaElement;
 
@@ -19,11 +21,19 @@
 	});
 
 	async function createPost() {
-		const newPost = new NDKEvent(ndk, {
+		let event = {
 			kind: 1,
 			content,
-			tags: [['#t', 'animestr']]
-		});
+			tags: [['t', 'animestr']]
+		};
+		if (replyTo) {
+			const root = replyTo.tags.find((t) => t[0] === 'e' && t[3] === 'root')?.[1];
+			if (root) {
+				event.tags.push(['e', root, '', 'root']);
+				event.tags.push(['e', replyTo.id, '', 'reply']);
+			} else event.tags.push(['e', replyTo.id, '', 'root']);
+		}
+		const newPost = new NDKEvent(ndk, event);
 		await newPost.publish();
 		content = '';
 	}

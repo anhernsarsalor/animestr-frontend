@@ -2,6 +2,7 @@
 	import { ndk } from '$lib/stores/signerStore.svelte';
 	import { NDKSubscriptionCacheUsage, type NDKKind } from '@nostr-dev-kit/ndk';
 	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
+	import Loading from './Loading.svelte';
 
 	let { animeId, source, event = null } = $props();
 
@@ -25,7 +26,7 @@
 	>
 		{#if isLoading}
 			<div class="card-body items-center justify-center p-4">
-				<span class="loading loading-spinner loading-md text-primary"></span>
+				<Loading inline />
 				<p class="text-base-content/70 mt-2 text-sm">Loading anime...</p>
 			</div>
 		{:else if animeData}

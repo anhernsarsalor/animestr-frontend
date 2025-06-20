@@ -4,6 +4,7 @@
 	import AnimeReference from './AnimeReference.svelte';
 	import { ndk } from '$lib/stores/signerStore.svelte';
 	import { NDKSubscriptionCacheUsage, type NDKEventId } from '@nostr-dev-kit/ndk';
+	import Loading from './Loading.svelte';
 
 	let {
 		eventId
@@ -42,7 +43,7 @@
 		<div class="collapse-content bg-base-100/50">
 			{#if isLoading}
 				<div class="flex justify-center py-4">
-					<span class="loading loading-spinner loading-md text-primary"></span>
+					<Loading inline />
 				</div>
 			{:else if event}
 				<div class="pt-2">

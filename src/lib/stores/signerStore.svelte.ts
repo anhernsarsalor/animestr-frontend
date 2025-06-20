@@ -43,34 +43,46 @@ export const initSigner = async () => {
   }
 
   await new Promise(async (resolve) => {
-    async function saveSigner() {
+    let isResolved = false;
+
+    const setupSigner = async () => {
+      if (isResolved) return;
+
       const signer = new NDKNip07Signer(1000, ndk);
       ndk.signer = signer;
       await signer.user().then((user) => user.fetchProfile());
       ndk.connect();
       nostr.activeUser = ndk.activeUser!;
-      document.removeEventListener('nlAuth', eventListener);
+      isResolved = true;
       resolve(true);
     };
 
-    const eventListener = async (e: Event) => {
-      const customEvent = e as CustomEvent<{ type: string }>;
-      if (customEvent.detail?.type === 'login' || customEvent.detail?.type === 'signup')
-        await saveSigner();
+    const handleAuth = async (e: Event) => {
+      const { type } = (e as CustomEvent<{ type: string }>).detail || {};
+      if (['login', 'signup'].includes(type)) {
+        document.removeEventListener('nlAuth', handleAuth);
+        await setupSigner();
+      }
     };
 
-    document.addEventListener('nlAuth', eventListener);
+    document.addEventListener('nlAuth', handleAuth);
 
-    const loadKey = debounce(async () => {
+    const checkNostrExtension = debounce(async () => {
+      if (isResolved) return;
+
       try {
         const pubkey = await window.nostr?.getPublicKey();
-        if (pubkey)
-          await saveSigner();
+        if (pubkey) {
+          document.removeEventListener('nlAuth', handleAuth);
+          await setupSigner();
+          return;
+        }
       } catch { }
-      document.querySelectorAll('dialog').forEach(dialog => dialog.remove())
-      loadKey()
+
+      document.querySelectorAll('dialog').forEach(dialog => dialog.remove());
+      checkNostrExtension();
     }, 100);
 
-    loadKey();
+    checkNostrExtension();
   });
 };

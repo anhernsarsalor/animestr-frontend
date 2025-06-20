@@ -62,7 +62,7 @@
 			<div class="flex flex-col">
 				<h1 class="mb-1 text-2xl font-bold">
 					{#if isLoading && !profile}
-						<div class="bg-base-300 h-8 w-48 animate-pulse rounded"></div>
+						<Loading inline />
 					{:else}
 						{profile?.displayName || profile?.name || user.pubkey}
 					{/if}
