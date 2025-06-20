@@ -39,8 +39,6 @@
 			}
 		})
 	);
-
-	$inspect(picker);
 </script>
 
 <div>

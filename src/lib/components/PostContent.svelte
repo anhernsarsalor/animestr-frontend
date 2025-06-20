@@ -2,12 +2,12 @@
 	import { contentProcessor } from '$lib/stores/contentProcessor.js';
 	import ContentImage from './ContentImage.svelte';
 	import YouTubeEmbed from './YoutubeEmbed.svelte';
-	import NostrMention from './NostrMention.svelte';
 	import ContentVideo from './ContentVideo.svelte';
 	import NostrEventReference from './NostrEventReference.svelte';
 	import AnimeReference from './AnimeReference.svelte';
 	import AnimestrLogo from './AnimestrLogo.svelte';
 	import PostContent from './PostContent.svelte';
+	import UserInfo from './UserInfo.svelte';
 
 	interface Props {
 		content: string;
@@ -69,16 +69,16 @@
 			{:else if segment.type === 'url'}
 				<a class="url-link" href={segment.content} target="_blank">{segment.content}</a>
 			{:else if segment.type === 'mention'}
-				<NostrMention pubkey={segment.content} />
+				<UserInfo user={segment.data} inline />
 			{:else if segment.type === 'youtube'}
 				<YouTubeEmbed videoId={segment.content} />
 			{:else if segment.type === 'video'}
 				<ContentVideo src={segment.content} />
 			{:else if segment.type === 'markdown'}
 				{#if segment.data.element === 'link' && 'href' in segment.data}
-					<a href={segment.data.href as string} target="_blank" class="url-link"
-						>{segment.content}</a
-					>
+					<a href={segment.data.href as string} target="_blank" class="url-link">
+						{segment.content}
+					</a>
 				{:else if segment.data.element === 'anime'}
 					<AnimeReference animeId={segment.data.content} source={segment.data.source} />
 				{:else}

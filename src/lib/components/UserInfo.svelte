@@ -1,36 +1,32 @@
 <script lang="ts">
-	import { getColorFromPubkey, profileSubscription } from '$lib/utils.svelte';
-	import PlaceholderAvatar from './PlaceholderAvatar.svelte';
+	import { profileSubscription } from '$lib/utils.svelte';
 	import { type NDKUser } from '@nostr-dev-kit/ndk';
+	import UserAvatar from './UserAvatar.svelte';
 
 	const {
-		user
+		user,
+		inline
 	}: {
 		user: NDKUser;
+		inline?: boolean;
 	} = $props();
 
-	let { profile } = profileSubscription(user)();
+	let profile = profileSubscription(user);
 
 	const shortNpub = $derived(user.npub.slice(0, 6) + '...' + user.npub.slice(-6));
-	const metadata = $derived(profile || null);
-	const username = $derived(metadata?.displayName || metadata?.name || shortNpub);
-	const avatar = $derived(metadata?.picture || '');
-	const isLoadingProfile = $derived(!metadata);
-	const avatarColor = $derived(getColorFromPubkey(user.pubkey));
+	const username = $derived($profile?.displayName || $profile?.name || shortNpub);
+	const isLoadingProfile = $derived(!$profile);
+	const size = $derived(inline ? 30 : undefined);
 </script>
 
-<div class="flex items-center gap-3">
-	<a href={`/user/${user.npub}`} class="avatar transition-opacity hover:opacity-80">
-		<div
-			class="h-12 w-12 overflow-hidden rounded-full border-3"
-			style="border: 2px solid {avatarColor};"
-		>
-			{#if avatar}
-				<img src={avatar} alt="User avatar" class="object-cover" />
-			{:else}
-				<PlaceholderAvatar {user} />
-			{/if}
-		</div>
+<div
+	class="items-center gap-2"
+	class:gap-1={inline}
+	class:flex={!inline}
+	class:inline-flex={inline}
+>
+	<a href={`/user/${user.npub}`} class="transition-opacity hover:opacity-80">
+		<UserAvatar {size} {user} />
 	</a>
 
 	<a href={`/user/${user.npub}`} class="flex flex-col transition-opacity hover:opacity-80">
@@ -43,6 +39,8 @@
 				{shortNpub}
 			{/if}
 		</span>
-		<span class="text-xs font-medium">{shortNpub}</span>
+		{#if !inline}
+			<span class="text-xs font-medium">{shortNpub}</span>
+		{/if}
 	</a>
 </div>

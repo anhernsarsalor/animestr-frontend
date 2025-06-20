@@ -1,6 +1,7 @@
 import { decode as bolt11Decode } from 'light-bolt11-decoder';
-import { NDKSubscriptionCacheUsage, NDKUser, profileFromEvent } from "@nostr-dev-kit/ndk";
+import { NDKSubscriptionCacheUsage, NDKUser, profileFromEvent, type NDKUserProfile } from "@nostr-dev-kit/ndk";
 import { ndk } from "./stores/signerStore.svelte";
+import { writable } from 'svelte/store';
 
 export function unique<T>(arr: T[], fn: (el: T) => unknown) {
   const fnOfArr = arr.map(fn);
@@ -21,26 +22,27 @@ export function getUserFromMention(user: string) {
   throw new Error('Invalid user ID');
 }
 
-export function profileSubscription(user: NDKUser) {
-  return () => {
-    const sub = ndk.$subscribe(
-      [
-        {
-          kinds: [0],
-          authors: [user!.pubkey]
-        }
-      ],
+export function profileSubscription(user: NDKUser | undefined) {
+  let profile = writable<NDKUserProfile | null>(null);
+  if (!user) return profile;
+  ndk.subscribe(
+    [
       {
-        closeOnEose: false,
-        cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+        kinds: [0],
+        authors: [user!.pubkey]
       }
-    );
-    let latestProfileEvent = $derived(sub[sub.length - 1]);
-    let profile = $derived(latestProfileEvent ? profileFromEvent(latestProfileEvent) : null)
-    return {
-      profile
+    ],
+    {
+      closeOnEose: false,
+      cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+    },
+    {
+      onEvent: (event) => {
+        profile.set(profileFromEvent(event));
+      }
     }
-  };
+  );
+  return profile;
 }
 
 export function getColorFromPubkey(pubkey: string): string {

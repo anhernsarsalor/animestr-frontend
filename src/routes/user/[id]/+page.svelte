@@ -3,17 +3,17 @@
 	import { page } from '$app/state';
 	import Loading from '$lib/components/Loading.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
-	import PlaceholderAvatar from '$lib/components/PlaceholderAvatar.svelte';
-	import { getColorFromPubkey, getUserFromMention, profileSubscription } from '$lib/utils.svelte';
+	import { getUserFromMention, profileSubscription } from '$lib/utils.svelte';
 	import { ndk } from '$lib/stores/signerStore.svelte';
 	import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+	import UserAvatar from '$lib/components/UserAvatar.svelte';
 
 	let userId = page.params.id;
 
 	let user = $derived(getUserFromMention(userId));
-	let { profile } = $derived(profileSubscription(user!)());
+	let profile = $derived(profileSubscription(user!));
 
-	let isLoading = $derived(!profile);
+	let isLoading = $derived(!$profile);
 
 	let events = $derived(
 		ndk.$subscribe([{ kinds: [1], authors: [user!.pubkey] }], {
@@ -26,17 +26,17 @@
 </script>
 
 <svelte:head>
-	<title>{profile?.displayName || profile?.name || page.params.id} | User Profile</title>
+	<title>{$profile?.displayName || $profile?.name || page.params.id} | User Profile</title>
 </svelte:head>
 
 {#if isLoading}
 	<Loading />
 {:else}
 	<div class="container mx-auto max-w-3xl p-4">
-		{#if profile?.banner}
+		{#if $profile?.banner}
 			<div class="relative mb-6 h-40 w-full overflow-hidden rounded-lg md:h-60">
 				<img
-					src={profile.banner}
+					src={$profile.banner}
 					alt="User banner"
 					class="absolute inset-0 h-full w-full object-cover"
 				/>
@@ -46,25 +46,16 @@
 			</div>
 		{/if}
 		<div class="bg-base-200 mb-6 rounded-lg p-6 pt-16 shadow-sm">
-			<div class:-mt-20={profile?.banner} class="avatar">
-				<div
-					class="h-32 w-32 overflow-hidden rounded-full border-4 md:h-40 md:w-40"
-					style="border: 4px solid {getColorFromPubkey(user.pubkey)};"
-				>
-					{#if profile?.picture}
-						<img src={profile.picture} alt="User avatar" class="object-cover" />
-					{:else}
-						<PlaceholderAvatar {user} />
-					{/if}
-				</div>
+			<div class:-mt-20={$profile?.banner} class="avatar">
+				<UserAvatar {user} />
 			</div>
 
 			<div class="flex flex-col">
 				<h1 class="mb-1 text-2xl font-bold">
-					{#if isLoading && !profile}
+					{#if isLoading}
 						<Loading inline />
 					{:else}
-						{profile?.displayName || profile?.name || user.pubkey}
+						{$profile?.displayName || $profile?.name || user.pubkey}
 					{/if}
 				</h1>
 				<div class="text-base-content/70 mb-3 font-mono text-sm">

@@ -1,3 +1,4 @@
+import { getUserFromMention } from "$lib/utils.svelte";
 import type { NDKEventId } from "@nostr-dev-kit/ndk";
 
 const HTML_ENTITIES = {
@@ -359,7 +360,7 @@ export const contentProcessor: ContentProcessor = {
       const nprofileSegments = processTextWithRegex(segment.content, NPROFILE_REGEX, (match) => ({
         type: 'mention',
         content: match[1],
-        data: { pubkey: match[1] }
+        data: getUserFromMention(match[1])
       }));
 
       return nprofileSegments.flatMap(mentionSegment => {
@@ -368,7 +369,7 @@ export const contentProcessor: ContentProcessor = {
         const npubSegments = processTextWithRegex(segment.content, MENTION_REGEX, (match) => ({
           type: 'mention',
           content: match[1],
-          data: { pubkey: match[1] }
+          data: getUserFromMention(match[1])
         }));
 
         return npubSegments.flatMap(npubSegment => {
