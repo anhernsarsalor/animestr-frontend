@@ -4,8 +4,7 @@ import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { debounce } from "$lib/utils.svelte";
 
 export const ndk = new NDKSvelte({
-  explicitRelayUrls: ["wss://anime.nostr1.com", 'wss://relay.nostr.band', "wss://anime.nostr1.com", "wss://relay.nostr.wirednet.jp", "wss://at.nostrworks.com", "wss://atlas.nostr.land"],
-  devWriteRelayUrls: ['wss://sendit.nosflare.com'],
+  explicitRelayUrls: ["wss://anime.nostr1.com", 'wss://relay.nostr.band', "wss://anime.nostr1.com", "wss://relay.nostr.wirednet.jp", "wss://at.nostrworks.com", "wss://atlas.nostr.land", 'wss://sendit.nostrflare.com'],
   autoConnectUserRelays: true,
   enableOutboxModel: true,
   autoBlacklistInvalidRelays: true,
@@ -41,6 +40,9 @@ export const initSigner = async () => {
   if (typeof document === 'undefined') {
     return;
   }
+
+  ndk.clientName = 'animestr';
+  ndk.clientNip89 = 'animestr';
 
   await new Promise(async (resolve) => {
     let isResolved = false;
