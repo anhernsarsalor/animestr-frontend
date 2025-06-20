@@ -56,7 +56,7 @@
 	const reactionEmoji = $derived(reactionsData.emojis);
 
 	async function onEmojiSelected(emoji: EmojiData | string) {
-		if (typeof emoji !== 'string') return emoji.native;
+		if (typeof emoji !== 'string') return onEmojiSelected(emoji.native);
 		const reactionEvent = {
 			kind: 7,
 			tags: [['e', event.id]],
