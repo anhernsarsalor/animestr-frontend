@@ -4,10 +4,7 @@ import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import { debounce } from "$lib/utils.svelte";
 
 export const ndk = new NDKSvelte({
-  explicitRelayUrls: ["wss://anime.nostr1.com", 'wss://relay.nostr.band', "wss://anime.nostr1.com", "wss://relay.nostr.wirednet.jp", "wss://at.nostrworks.com", "wss://atlas.nostr.land", 'wss://sendit.nostrflare.com'],
-  autoConnectUserRelays: true,
-  enableOutboxModel: true,
-  autoBlacklistInvalidRelays: true,
+  explicitRelayUrls: ["wss://anime.nostr1.com", 'wss://relay.nostr.band', "wss://anime.nostr1.com", "wss://relay.nostr.wirednet.jp", "wss://at.nostrworks.com", "wss://atlas.nostr.land", 'wss://sendit.nostrflare.com', 'wss://nostr.wine', 'wss://wot.utxo.one'],
   cacheAdapter: new NDKCacheAdapterDexie({ dbName: 'animestr-cache', profileCacheSize: 1e6, zapperCacheSize: 1e6, nip05CacheSize: 1e6, eventCacheSize: 1e6, eventTagsCacheSize: 1e6, saveSig: true }),
 });
 
