@@ -58,7 +58,9 @@
 		>
 			<Icon icon="line-md:bell-twotone-loop" width="32" />
 		</button>
-		<UserAvatar user={nostr.activeUser} />
+		<a href="/watch-list">
+			<UserAvatar user={nostr.activeUser} />
+		</a>
 	</div>
 </div>
 

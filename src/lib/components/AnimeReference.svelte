@@ -5,7 +5,7 @@
 	import Loading from './Loading.svelte';
 	import Icon from '@iconify/svelte';
 
-	let { animeId, source, event = null } = $props();
+	let { animeId, source, score = null, event = null } = $props();
 
 	let loadedEvents = $derived(
 		event
@@ -54,6 +54,13 @@
 					{/if}
 					{#if animeData.season && animeData.year}
 						<div class="badge badge-ghost">{animeData.season} {animeData.year}</div>
+					{/if}
+				</div>
+				<div class="card-footer">
+					{#if score !== null}
+						<div class="badge badge-secondary">
+							Score: {score.toFixed(2)}
+						</div>
 					{/if}
 				</div>
 			</div>

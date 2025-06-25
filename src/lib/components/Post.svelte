@@ -10,6 +10,7 @@
 	import PostReactions from './PostReactions.svelte';
 	import PostReplies from './PostReplies.svelte';
 	import Loading from './Loading.svelte';
+	import PostContentListUpdate from './PostContentListUpdate.svelte';
 
 	const usersWhoPostNSFWWithoutMarks = [
 		'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
@@ -47,7 +48,7 @@
 	let repliesVisible = $state(false);
 	let isSensitiveContent = $state(
 		!!event.tags.find((t) => t[0] === 'sensitive-content') ||
-			usersWhoPostNSFWWithoutMarks.includes(event.author.pubkey)
+			(usersWhoPostNSFWWithoutMarks.includes(event.author.pubkey) && event.content.includes('http')) // only mark as sensitive if the user posts an image
 	);
 </script>
 
@@ -68,13 +69,17 @@
 			</div>
 		</div>
 
-		<PostContent
-			originalContent={event.content}
-			content={postContent}
-			isEdited={contentEdits.length > 0}
-			isSensitive={isSensitiveContent}
-			emoji={emoji()}
-		/>
+		{#if event.kind === 1}
+			<PostContent
+				originalContent={event.content}
+				content={postContent}
+				isEdited={contentEdits.length > 0}
+				isSensitive={isSensitiveContent}
+				emoji={emoji()}
+			/>
+		{:else}
+			<PostContentListUpdate {event} />
+		{/if}
 
 		<div class="card-actions mt-2 justify-end">
 			<PostReactions {event} />

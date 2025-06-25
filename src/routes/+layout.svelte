@@ -28,7 +28,9 @@
 	<div class="bg-base-100 text-base-content flex min-h-screen flex-col">
 		<Navbar />
 
-		<slot />
+		<div class="container mx-auto max-w-4xl">
+			<slot />
+		</div>
 
 		<footer class="footer bg-base-200 text-base-content p-4">
 			<div class="mx-auto text-center text-xs opacity-70">
