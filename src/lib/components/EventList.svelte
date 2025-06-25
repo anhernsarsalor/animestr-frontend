@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Post from '$lib/components/Post.svelte';
-	import { fly } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 	import type { NDKEvent } from '@nostr-dev-kit/ndk';
 	import Loading from './Loading.svelte';
 
@@ -64,7 +64,7 @@
 		</div>
 		{#each slice as event}
 			{#key event.id}
-				<div in:fly>
+				<div in:fade>
 					<Post {event} />
 				</div>
 			{/key}
