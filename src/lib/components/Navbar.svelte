@@ -58,9 +58,33 @@
 		>
 			<Icon icon="line-md:bell-twotone-loop" width="32" />
 		</button>
-		<a href="/watch-list">
-			<UserAvatar user={nostr.activeUser} />
-		</a>
+		<div class="mr-4">
+			<button popovertarget="user-menu">
+				<UserAvatar user={nostr.activeUser} />
+			</button>
+		</div>
+		<ul
+			class="dropdown menu rounded-box bg-base-100 w-52 text-xl shadow-sm"
+			popover
+			id="user-menu"
+			onclick={() => document.getElementById('user-menu')?.hidePopover()}
+		>
+			<li>
+				<a href="/user/{nostr.activeUser?.npub}">
+					<Icon icon="line-md:person-twotone" /> Profile
+				</a>
+			</li>
+			<li>
+				<a href="/watch-list">
+					<Icon icon="line-md:watch-twotone" /> Watch List
+				</a>
+			</li>
+			<li>
+				<a href="/logout">
+					<Icon icon="line-md:close-circle-twotone" /> Logout
+				</a>
+			</li>
+		</ul>
 	</div>
 </div>
 
