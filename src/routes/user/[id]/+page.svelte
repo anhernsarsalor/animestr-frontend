@@ -3,40 +3,39 @@
 	import { page } from '$app/state';
 	import Loading from '$lib/components/Loading.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
-	import { getUserFromMention, profileSubscription } from '$lib/utils.svelte';
-	import { ndk } from '$lib/stores/signerStore.svelte';
-	import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+	import { getUserFromMention } from '$lib/utils.svelte';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
+	import { profileLoader, timelineLoaderToSvelteReadable } from '$lib';
+	import { getDisplayName, getProfileContent } from 'applesauce-core/helpers';
 
-	let userId = page.params.id;
-
+	let userId = $derived(page.params.id);
 	let user = $derived(getUserFromMention(userId));
-	let profile = $derived(profileSubscription(user!));
+	let profileRaw = $derived(profileLoader(user.pubkey!));
+	let profile = $derived($profileRaw ? getProfileContent($profileRaw) : undefined);
+	let username = $derived(getDisplayName(profile, user.npub));
 
-	let isLoading = $derived(!$profile);
+	let isLoading = $derived(!profile);
 
-	let events = $derived(
-		ndk.$subscribe([{ kinds: [1], authors: [user!.pubkey] }], {
-			closeOnEose: false,
-			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-		})
-	);
+	let events = timelineLoaderToSvelteReadable({
+		kinds: [1, 31111],
+		authors: [user.pubkey]
+	});
 
-	let filteredEvents = $derived(events.filter(filterNoReplies));
+	let filteredEvents = $derived($events.filter(filterNoReplies));
 </script>
 
 <svelte:head>
-	<title>{$profile?.displayName || $profile?.name || page.params.id} | User Profile</title>
+	<title>{username} | User Profile</title>
 </svelte:head>
 
 {#if isLoading}
 	<Loading />
 {:else}
 	<div class="container mx-auto max-w-3xl p-4">
-		{#if $profile?.banner}
+		{#if profile?.banner}
 			<div class="relative mb-6 h-40 w-full overflow-hidden rounded-lg md:h-60">
 				<img
-					src={$profile.banner}
+					src={profile.banner}
 					alt="User banner"
 					class="absolute inset-0 h-full w-full object-cover"
 				/>
@@ -46,7 +45,7 @@
 			</div>
 		{/if}
 		<div class="bg-base-200 mb-6 rounded-lg p-6 pt-16 shadow-sm">
-			<div class:-mt-20={$profile?.banner} class="avatar">
+			<div class:-mt-20={profile?.banner} class="avatar">
 				<UserAvatar {user} />
 			</div>
 
@@ -55,7 +54,7 @@
 					{#if isLoading}
 						<Loading inline />
 					{:else}
-						{$profile?.displayName || $profile?.name || user.pubkey}
+						{username}
 					{/if}
 				</h1>
 				<div class="text-base-content/70 mb-3 font-mono text-sm">

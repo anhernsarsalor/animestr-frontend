@@ -1,15 +1,15 @@
 <script lang="ts">
 	import Post from '$lib/components/Post.svelte';
 	import { fade } from 'svelte/transition';
-	import type { NDKEvent } from '@nostr-dev-kit/ndk';
 	import Loading from './Loading.svelte';
+	import type { Event } from 'nostr-tools';
 
 	let {
 		events,
 		header = '',
 		emptyMessage = 'No events found'
 	}: {
-		events: NDKEvent[];
+		events: Event[];
 		header?: string;
 		emptyMessage?: string;
 	} = $props();
@@ -18,8 +18,6 @@
 	let end = $state(20);
 
 	let slice = $derived(events.slice(start, end));
-
-	let div = $state<HTMLElement | undefined>();
 
 	function previous() {
 		start = start - 20;
@@ -51,9 +49,9 @@
 		<div class="text-base-content/70 py-8 text-center">{emptyMessage}</div>
 	</div>
 {:else}
-	<div class="space-y-4" bind:this={div}>
+	<div class="space-y-4">
 		<div class="flex justify-between">
-			{#if start > 0 && events.length > end}
+			{#if start > 0}
 				<button class="btn btn-primary" onclick={previous}>Previous</button>
 			{:else}
 				<span></span>
@@ -70,7 +68,7 @@
 			{/key}
 		{/each}
 		<div class="flex justify-between">
-			{#if start > 0 && events.length > end}
+			{#if start > 0}
 				<button class="btn btn-primary" onclick={previous}>Previous</button>
 			{:else}
 				<span></span>

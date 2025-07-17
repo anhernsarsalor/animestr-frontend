@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { initSigner } from '$lib/stores/signerStore.svelte';
+	import { init as initNostrLogin } from 'nostr-login';
 	import Icon from '@iconify/svelte';
 	import AnimestrLogo from '$lib/components/AnimestrLogo.svelte';
 	import NavbarMenu from '$lib/components/Navbar/NavbarMenu.svelte';
@@ -6,12 +8,18 @@
 	import UserAvatar from './UserAvatar.svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import { goto } from '$app/navigation';
-
-	// TODO: implement easy search functionality using names, need to figure out a faster algorithm than querying nostr, ndk is too slow
+	import Loading from './Loading.svelte';
+	import AnimeSearchResults from './AnimeSearchResults.svelte';
+	import type { AnimeData } from '$lib/nostr/types';
 
 	let search = $state('');
 	let searchDialog: HTMLDialogElement | null = null;
 	let searchInput: HTMLInputElement | null = null;
+	let selectedAnime: AnimeData | null = $state(null);
+
+	$effect(() => {
+		if (selectedAnime) goto(`/anime/${selectedAnime.identifiers[0].value}`);
+	});
 
 	function openSearchDialog() {
 		searchDialog?.showModal();
@@ -39,6 +47,22 @@
 		}
 		searchDialog?.close();
 	}
+
+	let isLoggingIn = $state(false);
+
+	async function login() {
+		isLoggingIn = true;
+		await initNostrLogin({
+			methods: ['connect', 'extension', 'local'],
+			title: 'Animestr',
+			description: 'Animestr is a nostr client focused on anime',
+			noBanner: true,
+			localSignup: true,
+			signupRelays: 'wss://anime.nostr1.com'
+		});
+		await initSigner();
+		isLoggingIn = false;
+	}
 </script>
 
 <div class="navbar bg-base-300 shadow-sm">
@@ -59,32 +83,49 @@
 			<Icon icon="line-md:bell-twotone-loop" width="32" />
 		</button>
 		<div class="mr-4">
-			<button popovertarget="user-menu">
-				<UserAvatar user={nostr.activeUser} />
-			</button>
+			{#if nostr.activeUser}
+				<button popovertarget="user-menu">
+					<UserAvatar user={nostr.activeUser} />
+				</button>
+			{:else}
+				<button onclick={login} class="btn btn-ghost btn-circle">
+					{#if isLoggingIn}
+						<Loading inline />
+					{:else}
+						Login
+					{/if}
+				</button>
+			{/if}
 		</div>
-		<ul
-			class="dropdown menu rounded-box bg-base-100 w-52 text-xl shadow-sm"
-			popover
-			id="user-menu"
-			onclick={() => document.getElementById('user-menu')?.hidePopover()}
-		>
-			<li>
-				<a href="/user/{nostr.activeUser?.npub}">
-					<Icon icon="line-md:person-twotone" /> Profile
-				</a>
-			</li>
-			<li>
-				<a href="/watch-list">
-					<Icon icon="line-md:watch-twotone" /> Watch List
-				</a>
-			</li>
-			<li>
-				<a href="/logout">
-					<Icon icon="line-md:close-circle-twotone" /> Logout
-				</a>
-			</li>
-		</ul>
+		{#if nostr.activeUser}
+			<ul
+				class="dropdown menu rounded-box bg-base-100 w-52 text-xl shadow-sm"
+				popover
+				id="user-menu"
+				onclick={() => document.getElementById('user-menu')?.hidePopover()}
+			>
+				<li>
+					<a href="/user/{nostr.activeUser?.npub}">
+						<Icon icon="line-md:person-twotone" /> Profile
+					</a>
+				</li>
+				<li>
+					<a href="/watch-list">
+						<Icon icon="line-md:watch-twotone" /> Watch List
+					</a>
+				</li>
+				<li>
+					<a href="/settings">
+						<Icon icon="line-md:pencil-twotone" /> Settings <!-- TODO: find a better icon for setting -->
+					</a>
+				</li>
+				<li>
+					<a href="/logout">
+						<Icon icon="line-md:close-circle-twotone" /> Logout
+					</a>
+				</li>
+			</ul>
+		{/if}
 	</div>
 </div>
 
@@ -105,6 +146,9 @@
 			<kbd class="kbd kbd-sm">Ctrl</kbd>
 			<kbd class="kbd kbd-sm">P</kbd>
 		</label>
+		<div class="mt-4 max-h-[400px] overflow-y-auto">
+			<AnimeSearchResults query={search} bind:selectedAnime />
+		</div>
 	</div>
 	<form method="dialog" class="modal-backdrop">
 		<button>close</button>

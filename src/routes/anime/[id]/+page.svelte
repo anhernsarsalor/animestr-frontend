@@ -1,25 +1,19 @@
 <script lang="ts">
-	import { ndk } from '$lib/stores/signerStore.svelte';
 	import { page } from '$app/state';
-	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
 	import AnimeAltTitles from '$lib/components/AnimeAltTitles.svelte';
 	import AnimeGenres from '$lib/components/AnimeGenres.svelte';
 	import AnimeIdentifiers from '$lib/components/AnimeIdentifiers.svelte';
-	import { NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 	import Loading from '$lib/components/Loading.svelte';
+	import { animeEventLoader } from '$lib';
+	import AnimeBasicInfo from '$lib/components/AnimeBasicInfo.svelte';
 
-	let events = $derived(
-		ndk.$subscribe([{ kinds: [30010 as NDKKind], '#i': [page.params.id] }], {
-			closeOnEose: false,
-			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-		})
-	);
-	let animeData = $derived(events[0] ? parseAnimeEvent(events[0]) : null);
+	let animeData = animeEventLoader(page.params.id);
+
 	let isLoading = $derived(!animeData);
 </script>
 
 <svelte:head>
-	<title>{animeData ? animeData.title : 'Loading Anime...'}</title>
+	<title>{animeData ? $animeData?.title : 'Loading Anime...'}</title>
 </svelte:head>
 
 <main class="bg-base-200 min-h-screen py-8">
@@ -33,15 +27,15 @@
 				<Loading inline />
 				<p class="ml-4">Loading anime data...</p>
 			</div>
-		{:else if animeData}
+		{:else if $animeData}
 			<div class="card bg-base-100 shadow-xl">
 				<div class="bg-primary text-primary-content p-0">
 					<div class="grid grid-cols-1 md:grid-cols-4">
 						<div class="md:col-span-1">
-							{#if animeData.image}
+							{#if $animeData.image}
 								<img
-									src={animeData.image}
-									alt={animeData.title}
+									src={$animeData.image}
+									alt={$animeData.title}
 									class="h-full w-full object-cover md:h-[340px]"
 								/>
 							{:else}
@@ -53,53 +47,21 @@
 							{/if}
 						</div>
 
-						<div class="p-6 md:col-span-3">
-							<h1 class="mb-4 text-2xl font-bold">{animeData.title}</h1>
-
-							<div class="mb-6 space-y-2">
-								<div class="grid grid-cols-2 gap-2">
-									<div>
-										<span class="font-bold">Type:</span>
-										<span>{animeData.type}</span>
-									</div>
-
-									{#if animeData.episodes}
-										<div>
-											<span class="font-bold">Episodes:</span>
-											<span>{animeData.episodes}</span>
-										</div>
-									{/if}
-
-									{#if animeData.status}
-										<div>
-											<span class="font-bold">Status:</span>
-											<span>{animeData.status}</span>
-										</div>
-									{/if}
-
-									{#if animeData.season && animeData.year}
-										<div>
-											<span class="font-bold">Aired:</span>
-											<span>{animeData.season} {animeData.year}</span>
-										</div>
-									{/if}
-								</div>
-							</div>
-						</div>
+						<AnimeBasicInfo anime={$animeData} />
 					</div>
 				</div>
 
 				<div class="card-body">
-					{#if animeData.altTitles && animeData.altTitles.length > 0}
-						<AnimeAltTitles altTitles={animeData.altTitles} />
+					{#if $animeData.altTitles && $animeData.altTitles.length > 0}
+						<AnimeAltTitles altTitles={$animeData.altTitles} />
 					{/if}
 
-					{#if animeData.genres && animeData.genres.length > 0}
-						<AnimeGenres genres={animeData.genres} />
+					{#if $animeData.genres && $animeData.genres.length > 0}
+						<AnimeGenres genres={$animeData.genres} />
 					{/if}
 
-					{#if animeData.identifiers && animeData.identifiers.length > 0}
-						<AnimeIdentifiers identifiers={animeData.identifiers} />
+					{#if $animeData.identifiers && $animeData.identifiers.length > 0}
+						<AnimeIdentifiers identifiers={$animeData.identifiers} />
 					{/if}
 				</div>
 			</div>

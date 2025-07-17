@@ -2,8 +2,9 @@
 	import UserAvatar from './UserAvatar.svelte';
 	import { ndk, nostr } from '$lib/stores/signerStore.svelte';
 	import { NDKEvent } from '@nostr-dev-kit/ndk';
+	import type { Event } from 'nostr-tools';
 
-	let { replyTo }: { replyTo?: NDKEvent } = $props();
+	let { replyTo }: { replyTo?: Event } = $props();
 
 	let content = $state('');
 	let textareaElement: HTMLTextAreaElement;

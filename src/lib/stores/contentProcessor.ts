@@ -279,11 +279,13 @@ export const contentProcessor: ContentProcessor = {
       if (segment.type !== 'text') return [segment];
 
       return processTextWithRegex(segment.content, URL_REGEX, (match) => {
-        const cleanedUrl = cleanUrlTrailingPunctuation(match[1]);
+        let cleanedUrl = cleanUrlTrailingPunctuation(match[1]);
         if (cleanedUrl.startsWith('https://njump.me/nevent1')) {
           const event = cleanedUrl.slice('https://njump.me/'.length);
           return { type: 'event', content: event };
         }
+        if (cleanedUrl.startsWith('https://x.com'))
+          cleanedUrl = cleanedUrl.replace('https://x.com', 'https://xcancel.com');
         const segmentType = IMAGE_EXTENSIONS.test(cleanedUrl) ? 'image' : VIDEO_EXTENSIONS.test(cleanedUrl) ? 'video' : 'url';
         return { type: segmentType, content: cleanedUrl };
       });

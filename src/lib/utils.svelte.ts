@@ -1,7 +1,5 @@
 import { decode as bolt11Decode } from 'light-bolt11-decoder';
-import { NDKSubscriptionCacheUsage, NDKUser, profileFromEvent, type NDKUserProfile } from "@nostr-dev-kit/ndk";
-import { ndk } from "./stores/signerStore.svelte";
-import { writable } from 'svelte/store';
+import { NDKUser } from "@nostr-dev-kit/ndk";
 
 export function unique<T>(arr: T[], fn: (el: T) => unknown) {
   const fnOfArr = arr.map(fn);
@@ -20,29 +18,6 @@ export function getUserFromMention(user: string) {
   if (isValidHex(user))
     return new NDKUser({ pubkey: user });
   throw new Error('Invalid user ID');
-}
-
-export function profileSubscription(user: NDKUser | undefined) {
-  let profile = writable<NDKUserProfile | null>(null);
-  if (!user) return profile;
-  ndk.subscribe(
-    [
-      {
-        kinds: [0],
-        authors: [user!.pubkey]
-      }
-    ],
-    {
-      closeOnEose: false,
-      cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-    },
-    {
-      onEvent: (event) => {
-        profile.set(profileFromEvent(event));
-      }
-    }
-  );
-  return profile;
 }
 
 export function getColorFromPubkey(pubkey: string): string {
@@ -78,11 +53,4 @@ export function debounce<T>(f: (...args: T[]) => unknown, ms: number) {
       f(...args);
     }, ms);
   };
-}
-
-export function debouncer<T>(getter: () => T, wait: number) {
-  let current = $state<T>(getter());
-  const update = debounce((v: T) => current = v, wait);
-  $effect(() => update(getter()));
-  return () => current;
 }

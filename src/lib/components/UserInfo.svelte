@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { profileSubscription } from '$lib/utils.svelte';
 	import { type NDKUser } from '@nostr-dev-kit/ndk';
 	import UserAvatar from './UserAvatar.svelte';
+	import { profileLoader } from '$lib';
+	import { getDisplayName } from 'applesauce-core/helpers';
 
 	const {
 		user,
@@ -11,10 +12,10 @@
 		inline?: boolean;
 	} = $props();
 
-	let profile = profileSubscription(user);
+	let profile = profileLoader(user.pubkey);
 
+	const username = $derived(getDisplayName($profile));
 	const shortNpub = $derived(user.npub.slice(0, 6) + '...' + user.npub.slice(-6));
-	const username = $derived($profile?.displayName || $profile?.name || shortNpub);
 	const isLoadingProfile = $derived(!$profile);
 	const size = $derived(inline ? 30 : undefined);
 </script>

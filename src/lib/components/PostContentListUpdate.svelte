@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { NDKEvent } from '@nostr-dev-kit/ndk';
 	import AnimeReference from './AnimeReference.svelte';
+	import type { Event } from 'nostr-tools';
 
-	let { event }: { event: NDKEvent } = $props();
+	let { event }: { event: Event } = $props();
 
 	let anime = $derived(event.tags.filter((x) => x[0] === 'i'));
 	let lastEntry = $derived(anime[anime.length - 1]);

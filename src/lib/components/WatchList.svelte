@@ -1,35 +1,28 @@
 <script lang="ts">
+	import { timelineLoaderToSvelteReadable } from '$lib';
 	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
 	import type { AnimeData } from '$lib/nostr/types';
 	import { initSigner, ndk } from '$lib/stores/signerStore.svelte';
-	import { NDKEvent, NDKKind, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+	import { NDKEvent } from '@nostr-dev-kit/ndk';
+	import Icon from '@iconify/svelte';
+	import AnimeSearchResults from './AnimeSearchResults.svelte';
 
 	interface AnimeEntry {
 		identifier: string;
 		score: number;
 	}
 
-	const watchListEvent = $derived(
-		ndk.$subscribe(
-			[
-				{
-					kinds: [31111 as NDKKind],
-					'#d': ['anime-list'],
-					authors: [ndk.signer?.pubkey!]
-				}
-			],
-			{
-				closeOnEose: false,
-				cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-			}
-		)
-	);
+	const watchListEvents = timelineLoaderToSvelteReadable({
+		kinds: [31111],
+		'#d': ['anime-list'],
+		authors: [ndk.signer?.pubkey!]
+	});
 
-	const watchList = $derived(watchListEvent[0]);
+	const watchList = $derived($watchListEvents[0]);
 	const watchListIdentifiers = $derived(
 		watchList?.tags.filter((e) => e[0] === 'i').map((tag) => tag[1]) || []
 	);
-	const watchListEntries = $derived<AnimeEntry[]>(
+	let watchListEntries = $derived<AnimeEntry[]>(
 		watchList
 			? watchList.tags
 					.filter((e) => e[0] === 'i')
@@ -40,22 +33,21 @@
 			: []
 	);
 
-	const animeInWatchList = $derived(
-		ndk.$subscribe(
-			[
-				{
-					kinds: [30010 as NDKKind],
-					'#i': watchListIdentifiers
-				}
-			],
-			{
-				closeOnEose: false,
-				cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-			}
-		)
+	let sortedWatchList = $derived(
+		watchListEntries.toSorted((a, b) => {
+			if (a.score !== b.score) return b.score - a.score;
+			return a.identifier.localeCompare(b.identifier);
+		})
 	);
 
-	const animeData = $derived(animeInWatchList.map(parseAnimeEvent).filter((e) => e !== null));
+	const animeInWatchList = $derived(
+		timelineLoaderToSvelteReadable({
+			kinds: [30010],
+			'#i': watchListIdentifiers
+		})
+	);
+
+	const animeData = $derived($animeInWatchList.map(parseAnimeEvent).filter((e) => e !== null));
 	const identifierToAnimeEventMap = $derived(
 		new Map<string, AnimeData>(
 			animeData.map((event) => {
@@ -86,8 +78,10 @@
 	}
 
 	let addDialog: HTMLDialogElement | undefined;
+	let editScoreDialog: HTMLDialogElement | undefined;
 
-	let newAnimeId = $state('');
+	let selectedAnime: AnimeData | null = $state(null);
+	let animeSearch = $state('');
 	let newAnimeScore = $state(50);
 
 	function parseOklch(v: string) {
@@ -138,25 +132,56 @@
 	}
 
 	function doAddAnime() {
-		const indexOfExisting = watchListEntries.findIndex((anime) => anime.identifier === newAnimeId);
+		if (animeSearch.length < 2) return;
+		if (!selectedAnime) return;
+		const indexOfExisting = watchListEntries.findIndex((anime) =>
+			selectedAnime!.identifiers.some((i) => anime.identifier === i.value)
+		);
+		console.log(indexOfExisting, watchListEntries[indexOfExisting]);
 		if (indexOfExisting !== -1) watchListEntries.splice(indexOfExisting, 1);
 		watchListEntries.push({
-			identifier: newAnimeId,
+			identifier: selectedAnime!.identifiers[0].value,
 			score: newAnimeScore
 		});
-		newAnimeId = '';
+		watchListEntries = watchListEntries;
+		animeSearch = '';
 		newAnimeScore = 50;
 		addDialog?.close();
+		saveList();
+	}
+
+	let editingScoreForAnime = $state('');
+	function editScore(anime: AnimeEntry) {
+		newAnimeScore = anime.score;
+		editingScoreForAnime = anime.identifier;
+		editScoreDialog?.showModal();
+	}
+
+	function doEditScore() {
+		const indexOfExisting = watchListEntries.findIndex(
+			(anime) => anime.identifier === editingScoreForAnime
+		);
+		if (!indexOfExisting) return;
+		watchListEntries.splice(indexOfExisting, 1);
+		watchListEntries.push({
+			identifier: editingScoreForAnime,
+			score: newAnimeScore
+		});
+		watchListEntries = watchListEntries;
+		editingScoreForAnime = '';
+		newAnimeScore = 50;
+		editScoreDialog?.close();
+		saveList();
 	}
 </script>
 
 <dialog bind:this={addDialog} class="modal">
 	<div class="modal-box">
 		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box border p-4">
-			<legend class="fieldset-legend">Identifier</legend>
-			<input class="input input-bordered w-full grow" type="text" bind:value={newAnimeId} />
-			<p class="label">In the future this will have a proper search functionality</p>
+			<legend class="fieldset-legend">Name</legend>
+			<input class="input input-bordered w-full grow" type="text" bind:value={animeSearch} />
 		</fieldset>
+		<AnimeSearchResults query={animeSearch} bind:selectedAnime />
 		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box mt-4 border p-4">
 			<legend class="fieldset-legend">Score</legend>
 			<input
@@ -176,10 +201,32 @@
 	</form>
 </dialog>
 
+<dialog bind:this={editScoreDialog} class="modal">
+	<div class="modal-box">
+		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box border p-4">
+			<legend class="fieldset-legend">Edit Score</legend>
+			<input
+				class="range w-full"
+				type="range"
+				min={0}
+				max={100}
+				step={0.01}
+				bind:value={newAnimeScore}
+			/>
+			<span style:color={colorScore(newAnimeScore)} class="text-bold">{newAnimeScore}</span>
+		</fieldset>
+		<button class="btn btn-primary mt-4" onclick={doEditScore}>Save</button>
+	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
+</dialog>
+
 <ul class="watch-list">
-	<button onclick={saveList}>Save</button>
-	<button onclick={addDialog?.showModal()}>Add</button>
-	{#each watchListEntries as anime}
+	<button class="btn btn-primary mt-4 mb-4 w-full" onclick={() => addDialog?.showModal()}>
+		<Icon icon="mingcute:plus-fill" /> Add
+	</button>
+	{#each sortedWatchList as anime}
 		<li class="anime-item">
 			<a href="/anime/{anime.identifier}">
 				<img
@@ -193,7 +240,9 @@
 					{identifierToAnimeEventMap.get(anime.identifier)?.title}
 				</a>
 				<span class="anime-status">Finished</span>
-				<span class="score">{anime.score.toFixed(2)}</span>
+				<span class="score cursor-pointer" onclick={() => editScore(anime)}>
+					{anime.score.toFixed(2)}
+				</span>
 			</div>
 		</li>
 	{/each}

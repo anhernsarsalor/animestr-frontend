@@ -1,22 +1,23 @@
 <script lang="ts">
-	import { NDKSubscriptionCacheUsage, type NDKEvent, type NDKKind } from '@nostr-dev-kit/ndk';
+	import { NDKUser } from '@nostr-dev-kit/ndk';
 	import { scale } from 'svelte/transition';
 	import UserInfo from './UserInfo.svelte';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
 	import PostContent from './PostContent.svelte';
-	import { ndk } from '$lib/stores/signerStore.svelte';
 	import PostZaps from './PostZaps.svelte';
 	import PostReactions from './PostReactions.svelte';
 	import PostReplies from './PostReplies.svelte';
 	import Loading from './Loading.svelte';
 	import PostContentListUpdate from './PostContentListUpdate.svelte';
+	import type { Event } from 'nostr-tools';
+	import { timelineLoaderToSvelteReadable } from '$lib';
 
 	const usersWhoPostNSFWWithoutMarks = [
-		'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
+		// 'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
 	];
 
-	const { event }: { event: NDKEvent } = $props();
+	const { event }: { event: Event } = $props();
 	dayjs.extend(relativeTime);
 
 	const emoji = $derived(() => {
@@ -25,22 +26,14 @@
 		return allEmoji;
 	});
 
-	let altEvents = ndk.$subscribe(
-		[
-			{
-				kinds: [1010 as NDKKind],
-				authors: [event.author.pubkey],
-				'#e': [event.id]
-			}
-		],
-		{
-			closeOnEose: false,
-			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-		}
-	);
+	let altEvents = timelineLoaderToSvelteReadable({
+		kinds: [1010],
+		authors: [event.pubkey],
+		'#e': [event.id]
+	});
 
 	let contentEdits = $derived(
-		altEvents
+		$altEvents
 			.filter((e) => e.tags.some((t) => t[0] === 'alt' && t[1] === 'Content Change Event'))
 			.sort((a, b) => b.created_at! - a.created_at!)
 	);
@@ -48,8 +41,9 @@
 	let repliesVisible = $state(false);
 	let isSensitiveContent = $state(
 		!!event.tags.find((t) => t[0] === 'sensitive-content') ||
-			(usersWhoPostNSFWWithoutMarks.includes(event.author.pubkey) && event.content.includes('http')) // only mark as sensitive if the user posts an image
+			(usersWhoPostNSFWWithoutMarks.includes(event.pubkey) && event.content.includes('http')) // only mark as sensitive if the user posts an image
 	);
+	let author = $derived(new NDKUser({ pubkey: event.pubkey }));
 </script>
 
 <div
@@ -58,7 +52,7 @@
 >
 	<div class="card-body gap-4 p-4">
 		<div class="flex items-start justify-between">
-			<UserInfo user={event.author} />
+			<UserInfo user={author} />
 			<div
 				class="tooltip tooltip-left"
 				data-tip={dayjs(event.created_at! * 1000).format('YYYY-MM-DD HH:mm:ss')}

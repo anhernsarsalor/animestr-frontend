@@ -22,23 +22,24 @@
 
 	let pickerDiv = $state();
 
-	let picker = $derived(
-		new Picker({
-			parent: pickerDiv,
-			data: data,
-			emojiButtonSize: 50,
-			emojiSize: 38,
-			emojiButtonColors: ['rgba(102, 51, 153, .2)'],
-			icons: 'solid',
-			onEmojiSelect: (emoji: EmojiData) => {
-				onSelected?.(emoji);
-				open = false;
-			},
-			onClickoutside: () => {
-				open = false;
-			}
-		})
-	);
+	$effect(() => {
+		if (open)
+			new Picker({
+				parent: pickerDiv,
+				data: data,
+				emojiButtonSize: 50,
+				emojiSize: 38,
+				emojiButtonColors: ['rgba(102, 51, 153, .2)'],
+				icons: 'solid',
+				onEmojiSelect: (emoji: EmojiData) => {
+					onSelected?.(emoji);
+					open = false;
+				},
+				onClickoutside: () => {
+					open = false;
+				}
+			});
+	});
 </script>
 
 <div>

@@ -1,20 +1,19 @@
 <script lang="ts">
 	import EventList from '$lib/components/EventList.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
-	import { ndk } from '$lib/stores/signerStore.svelte.js';
-	import { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+	import { page } from '$app/state';
+	import { timelineLoaderToSvelteReadable } from '$lib';
 
-	const { data } = $props();
-	let hashtag = $derived(data.hashtag || '');
+	const { hashtag } = $derived(page.params);
 
-	let events = $derived(
-		ndk.$subscribe([{ kinds: [1], '#t': [hashtag.toLowerCase()] }], {
-			closeOnEose: false,
-			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
+	const events = $derived(
+		timelineLoaderToSvelteReadable({
+			kinds: [1],
+			'#t': [hashtag.toLowerCase()]
 		})
 	);
 
-	let filteredEvents = $derived(events.filter(filterNoReplies));
+	let filteredEvents = $derived($events.filter(filterNoReplies));
 </script>
 
 <svelte:head>

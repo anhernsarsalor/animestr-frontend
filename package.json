@@ -36,10 +36,16 @@
 		"@nostr-dev-kit/ndk": "^2.14.30",
 		"@nostr-dev-kit/ndk-cache-dexie": "^2.6.31",
 		"@nostr-dev-kit/ndk-svelte": "^2.4.35",
+		"applesauce-core": "^2.3.0",
+		"applesauce-loaders": "^2.1.0",
+		"applesauce-relay": "^2.3.0",
 		"daisyui": "^5.0.43",
 		"dayjs": "^1.11.13",
 		"emoji-mart": "^5.6.0",
 		"light-bolt11-decoder": "^3.2.0",
-		"nostr-login": "^1.7.11"
+		"nostr-idb": "^2.4.0",
+		"nostr-login": "^1.7.11",
+		"nostr-tools": "^2.15.0",
+		"rxjs": "^7.8.2"
 	}
 }

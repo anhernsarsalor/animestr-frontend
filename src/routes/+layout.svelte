@@ -1,23 +1,15 @@
 <script lang="ts">
-	import { initSigner, nostr } from '$lib/stores/signerStore.svelte';
-	import { init as initNostrLogin } from 'nostr-login';
 	import { onMount } from 'svelte';
 
 	import Loading from '$lib/components/Loading.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
+	import { loadAllAnimeEvents, timelineLoaderToSvelteReadable } from '$lib';
 
-	let loading = true;
+	let loading = $state(true);
+
+	loadAllAnimeEvents();
 
 	onMount(async () => {
-		await initNostrLogin({
-			methods: ['connect', 'extension', 'local'],
-			title: 'Animestr',
-			description: 'Animestr is a nostr client focused on anime',
-			noBanner: true,
-			localSignup: true,
-			signupRelays: 'wss://anime.nostr1.com'
-		});
-		await initSigner();
 		loading = false;
 	});
 </script>

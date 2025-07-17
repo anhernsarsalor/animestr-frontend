@@ -8,6 +8,7 @@
 	import AnimestrLogo from './AnimestrLogo.svelte';
 	import PostContent from './PostContent.svelte';
 	import UserInfo from './UserInfo.svelte';
+	import ContentUrl from './ContentUrl.svelte';
 
 	interface Props {
 		content: string;
@@ -28,7 +29,6 @@
 
 {#if isSensitive && !showSensitive}
 	<div class="relative">
-		<!-- Completely hidden content -->
 		<div class="invisible">
 			<PostContent {originalContent} {content} {emoji} {isEdited} />
 		</div>
@@ -67,7 +67,7 @@
 			{:else if segment.type === 'hashtag'}
 				<a class="hashtag" href={`/hashtag/${segment.content}`}>#{segment.content}</a>
 			{:else if segment.type === 'url'}
-				<a class="url-link" href={segment.content} target="_blank">{segment.content}</a>
+				<ContentUrl url={segment.content} />
 			{:else if segment.type === 'mention'}
 				<UserInfo user={segment.data} inline />
 			{:else if segment.type === 'youtube'}
@@ -219,17 +219,9 @@
 		opacity: 0.8;
 	}
 
-	:global(.url-link) {
-		color: #1d9bf0;
-	}
-
-	:global(.hashtag) {
-		color: #1d9bf0;
-		font-weight: 500;
-	}
-
+	:global(.hashtag),
 	:global(.mention) {
-		color: #1d9bf0;
+		color: var(--color-info);
 		font-weight: 500;
 	}
 

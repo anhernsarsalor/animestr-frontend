@@ -1,24 +1,13 @@
 <script lang="ts">
-	import { ndk } from '$lib/stores/signerStore.svelte';
-	import { NDKSubscriptionCacheUsage, type NDKKind } from '@nostr-dev-kit/ndk';
-	import parseAnimeEvent from '$lib/nostr/parseAnimeEvent';
 	import Loading from './Loading.svelte';
 	import Icon from '@iconify/svelte';
+	import { animeEventLoader } from '$lib';
 
-	let { animeId, source, score = null, event = null } = $props();
+	let { animeId, source, score = null } = $props();
 
-	let loadedEvents = $derived(
-		event
-			? [event]
-			: ndk.$subscribe([{ kinds: [30010 as NDKKind], '#i': [`${source}:${animeId}`] }], {
-					closeOnEose: false,
-					cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-				})
-	);
+	let animeData = animeEventLoader(`${source}:${animeId}`);
 
-	let loadedEvent = $derived(loadedEvents[0]);
-	let animeData = $derived(loadedEvent ? parseAnimeEvent(loadedEvent) : null);
-	let isLoading = $derived(!loadedEvent);
+	let isLoading = $derived(!$animeData);
 </script>
 
 <a href={`/anime/${source}:${animeId}`} class="my-4 block">
@@ -30,12 +19,12 @@
 				<Loading inline />
 				<p class="text-base-content/70 mt-2 text-sm">Loading anime...</p>
 			</div>
-		{:else if animeData}
-			{#if animeData.thumbnail || animeData.image}
+		{:else if $animeData}
+			{#if $animeData.thumbnail || $animeData.image}
 				<figure class="w-24">
 					<img
-						src={animeData.image || animeData.thumbnail}
-						alt={animeData.title}
+						src={$animeData.image || $animeData.thumbnail}
+						alt={$animeData.title}
 						class="h-full w-full object-cover"
 					/>
 				</figure>
@@ -46,14 +35,14 @@
 			{/if}
 			<div class="card-body px-4 py-3">
 				<h2 class="card-title line-clamp-1 text-base">
-					{animeData.title || 'Unknown Anime'}
+					{$animeData.title || 'Unknown Anime'}
 				</h2>
 				<div class="card-actions justify-start">
-					{#if animeData.type}
-						<div class="badge badge-primary">{animeData.type}</div>
+					{#if $animeData.type}
+						<div class="badge badge-primary">{$animeData.type}</div>
 					{/if}
-					{#if animeData.season && animeData.year}
-						<div class="badge badge-ghost">{animeData.season} {animeData.year}</div>
+					{#if $animeData.season && $animeData.year}
+						<div class="badge badge-ghost">{$animeData.season} {$animeData.year}</div>
 					{/if}
 				</div>
 				<div class="card-footer">

@@ -1,61 +1,23 @@
 <script lang="ts">
-	import UserInfo from './UserInfo.svelte';
-	import NDK, {
-		eventHasETagMarkers,
-		NDKEvent,
-		NDKSubscriptionCacheUsage,
-		NDKUser
-	} from '@nostr-dev-kit/ndk';
-	import { ndk } from '$lib/stores/signerStore.svelte';
+	import { NDKEvent } from '@nostr-dev-kit/ndk';
+	import { ndk, nostr } from '$lib/stores/signerStore.svelte';
 	import EmojiPicker, { type EmojiData } from './EmojiPicker.svelte';
 	import PostReaction from './PostReaction.svelte';
+	import type { Event } from 'nostr-tools';
+	import { reactionsLoaderToSvelteReadable } from '$lib';
 
-	let { event }: { event: NDKEvent } = $props();
+	let { event }: { event: Event } = $props();
 
-	let reactionEvents = ndk.$subscribe(
-		[
-			{
-				'#e': [event.id],
-				kinds: [7]
-			}
-		],
-		{
-			closeOnEose: false,
-			cacheUsage: NDKSubscriptionCacheUsage.CACHE_FIRST
-		}
-	);
+	let reactionsData = reactionsLoaderToSvelteReadable(event);
 
-	const reactionsData = $derived.by(() => {
-		const reactionAuthors: Record<string, NDKUser[]> = {};
-		const emojiMapping: Record<string, string> = {};
-
-		for (const reaction of reactionEvents) {
-			const emojiTags = reaction.tags.filter((x) => x[0] === 'emoji');
-			if (emojiTags.length === 1) {
-				const [, emoji, url] = emojiTags[0]!;
-				emojiMapping[emoji] = url;
-				if (!reactionAuthors[emoji]) {
-					reactionAuthors[emoji] = [];
-				}
-				reactionAuthors[emoji].push(reaction.author);
-			} else {
-				let emoji = reaction.content.trim();
-				if (emoji === '+') emoji = '👍';
-				if (emoji) {
-					if (!reactionAuthors[emoji]) {
-						reactionAuthors[emoji] = [];
-					}
-					reactionAuthors[emoji].push(reaction.author);
-				}
-			}
-		}
-		return { authors: reactionAuthors, emojis: emojiMapping };
-	});
-
-	const reactions = $derived(reactionsData.authors);
-	const reactionEmoji = $derived(reactionsData.emojis);
+	const reactions = $derived($reactionsData.authors);
+	const reactionEmoji = $derived($reactionsData.emojis);
 
 	async function onEmojiSelected(emoji: EmojiData | string) {
+		if (!nostr.activeUser) {
+			console.warn('No active user to react with');
+			return;
+		}
 		if (typeof emoji !== 'string') return onEmojiSelected(emoji.native);
 		const reactionEvent = {
 			kind: 7,
