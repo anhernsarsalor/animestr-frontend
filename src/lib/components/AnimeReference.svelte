@@ -3,7 +3,7 @@
 	import Icon from '@iconify/svelte';
 	import { animeEventLoader } from '$lib';
 
-	let { animeId, source, score = null } = $props();
+	let { animeId, source, score = null, status = null } = $props();
 
 	let animeData = animeEventLoader(`${source}:${animeId}`);
 
@@ -49,6 +49,11 @@
 					{#if score !== null}
 						<div class="badge badge-secondary">
 							Score: {score.toFixed(2)}
+						</div>
+					{/if}
+					{#if status !== null}
+						<div class="badge badge-secondary">
+							Status: {status}
 						</div>
 					{/if}
 				</div>

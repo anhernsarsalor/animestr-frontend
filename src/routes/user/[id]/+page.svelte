@@ -7,6 +7,7 @@
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
 	import { profileLoader, timelineLoaderToSvelteReadable } from '$lib';
 	import { getDisplayName, getProfileContent } from 'applesauce-core/helpers';
+	import WatchList from '$lib/components/WatchList.svelte';
 
 	let userId = $derived(page.params.id);
 	let user = $derived(getUserFromMention(userId));
@@ -16,10 +17,14 @@
 
 	let isLoading = $derived(!profile);
 
-	let events = timelineLoaderToSvelteReadable({
-		kinds: [1, 31111],
-		authors: [user.pubkey]
-	});
+	let selectedTab = $state('notes');
+
+	let events = $derived(
+		timelineLoaderToSvelteReadable({
+			kinds: [1, 31111],
+			authors: [user.pubkey]
+		})
+	);
 
 	let filteredEvents = $derived($events.filter(filterNoReplies));
 </script>
@@ -63,10 +68,33 @@
 			</div>
 		</div>
 
-		<EventList
-			events={filteredEvents}
-			header="Notes"
-			emptyMessage="This user hasn't published any notes yet."
-		/>
+		<div class="tabs tabs-box">
+			<input
+				type="radio"
+				name="userTabs"
+				class="tab"
+				aria-label="Notes"
+				value="notes"
+				bind:group={selectedTab}
+			/>
+			<div class="tab-content bg-base-100 border-base-300 p-6">
+				<EventList
+					events={filteredEvents}
+					emptyMessage="This user hasn't published any notes yet."
+				/>
+			</div>
+
+			<input
+				type="radio"
+				name="userTabs"
+				class="tab"
+				aria-label="Anime Watch List"
+				value="anime-list"
+				bind:group={selectedTab}
+			/>
+			<div class="tab-content bg-base-100 border-base-300 p-6">
+				<WatchList pubkey={user.pubkey} />
+			</div>
+		</div>
 	</div>
 {/if}

@@ -1,5 +1,6 @@
 import { decode as bolt11Decode } from 'light-bolt11-decoder';
 import { NDKUser } from "@nostr-dev-kit/ndk";
+import type WatchList from './components/WatchList.svelte';
 
 export function unique<T>(arr: T[], fn: (el: T) => unknown) {
   const fnOfArr = arr.map(fn);
@@ -53,4 +54,130 @@ export function debounce<T>(f: (...args: T[]) => unknown, ms: number) {
       f(...args);
     }, ms);
   };
+}
+
+export function interpolateBetweenThreeValues(value: number, val1: number, val2: number, val3: number) {
+  if (value <= 0.5) return val1 + (val2 - val1) * value * 2;
+  return val2 + (val3 - val2) * (value - 0.5) * 2;
+}
+
+export function parseOklch(v: string) {
+  const parenthesesValues = v.match(/\(([^)]+)\)/);
+  if (!parenthesesValues || parenthesesValues.length < 2) {
+    return [];
+  }
+  return parenthesesValues[1].replace(/\%/g, '').split(' ').map(parseFloat);
+}
+
+
+export function colorScore(score: number) {
+  const lowScoreColor = parseOklch(
+    getComputedStyle(document.documentElement).getPropertyValue('--color-error')
+  );
+  const mediumScoreColor = parseOklch(
+    getComputedStyle(document.documentElement).getPropertyValue('--color-warning')
+  );
+  const highScoreColor = parseOklch(
+    getComputedStyle(document.documentElement).getPropertyValue('--color-success')
+  );
+
+  const normalScore = Math.min(Math.max(score / 100, 0), 1);
+  const lValue = interpolateBetweenThreeValues(
+    normalScore,
+    lowScoreColor[0],
+    mediumScoreColor[0],
+    highScoreColor[0]
+  );
+  const cValue = interpolateBetweenThreeValues(
+    normalScore,
+    lowScoreColor[1],
+    mediumScoreColor[1],
+    highScoreColor[1]
+  );
+  const hValue = interpolateBetweenThreeValues(
+    normalScore,
+    lowScoreColor[2],
+    mediumScoreColor[2],
+    highScoreColor[2]
+  );
+
+  return 'oklch(' + lValue.toFixed(2) + '% ' + cValue.toFixed(2) + ' ' + hValue.toFixed(2) + ')';
+}
+
+export function animeScore(value: number | string | { value: number }) {
+  function cleanValue(val: number | string | { value: number }): number {
+    if (typeof val === 'number') return Math.min(100, Math.max(0, val));
+    if (typeof val === 'object') return cleanValue(val.value);
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 50 : Math.min(100, Math.max(0, parsed));
+  }
+
+  return new Proxy({
+    value: cleanValue(value),
+  } as {
+    value: number;
+    color: string;
+    toString(): string;
+    valueOf(): string;
+  }, {
+    get(target, prop) {
+      if (prop === "valueOf") return () => target.value;
+      if (prop === Symbol.toStringTag) return () => 'AnimeScore';
+      if (prop === Symbol.toPrimitive) return () => target.value;
+      if (prop === "color") return colorScore(target.value);
+      if (prop === "toString") return () => target.value.toFixed(2);
+      return target.value;
+    },
+    set(target, prop, newValue) {
+      if (prop !== "value") return false;
+      target.value = cleanValue(newValue);
+      return true;
+    },
+  })
+}
+
+export enum WatchStatus {
+  Watching = 0,
+  Completed = 1,
+  OnHold = 2,
+  Dropped = 3,
+  Planned = 4,
+};
+
+export function watchStatusToName(ws?: WatchStatus | string | number): string {
+  if (!ws) return 'unknown';
+
+  if (typeof ws === 'string') {
+    const wsAsInt = parseInt(ws);
+    let enumValue;
+    if (!isNaN(wsAsInt))
+      enumValue = (WatchStatus as any)[(WatchStatus as any)[wsAsInt]];
+    else
+      enumValue = (WatchStatus as any)[ws];
+    if (typeof enumValue === 'number' && enumValue >= 0 && enumValue <= 4) {
+      ws = enumValue;
+    } else {
+      return 'unknown';
+    }
+  }
+
+  if (typeof ws !== 'number') return 'unknown';
+
+  switch (ws) {
+    case WatchStatus.Watching: return 'watching';
+    case WatchStatus.Completed: return 'completed';
+    case WatchStatus.OnHold: return 'on-hold';
+    case WatchStatus.Dropped: return 'dropped';
+    case WatchStatus.Planned: return 'planned';
+    default: return 'unknown';
+  }
+}
+
+export function normalizeWatchStatus(status?: string) {
+  if (!status) return WatchStatus.Completed;
+  const keys = Object.keys(WatchStatus);
+  const keyName = status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
+  if (keys.includes(keyName))
+    return WatchStatus[keyName];
+  return WatchStatus.Completed;
 }

@@ -3,10 +3,10 @@ import { createAddressLoader, createEventLoader, createReactionsLoader, createTa
 import { onlyEvents, RelayPool } from "applesauce-relay";
 import type { Event, Filter, NostrEvent } from "nostr-tools";
 import { openDB, getEventsForFilters, addEvents } from "nostr-idb";
-import { bufferTime, filter, map, take } from "rxjs";
+import { bufferTime, distinctUntilKeyChanged, filter, from, map, mergeMap, take } from "rxjs";
 import { isFromCache } from "applesauce-core/helpers";
 import { readonly, writable } from "svelte/store";
-import { decodeBolt11Amount } from "./utils.svelte";
+import { animeScore, decodeBolt11Amount, normalizeWatchStatus, WatchStatus } from "./utils.svelte";
 import { NDKUser } from "@nostr-dev-kit/ndk";
 import parseAnimeEvent from "./nostr/parseAnimeEvent";
 import type { AnimeData } from "./nostr/types";
@@ -79,7 +79,7 @@ export function animeLoaderWithFilter(filterString: string, limit: number = 10) 
     kinds: [30010],
     '#t': ['animestr'],
   }).pipe(
-    filter((event: Event) => event.tags.some(t => (t[0] === 'title' || t[0] === "alt-title") && t[1].toLowerCase().includes(filterString.toLowerCase()))),
+    filter((event: Event) => event.tags.some(t => (t[0] === 'title' || t[0] === "alt-title" || t[0] === 'i') && t[1].toLowerCase().includes(filterString.toLowerCase()))),
     map(parseAnimeEvent),
     filter(event => event !== null),
     take(limit),
@@ -160,6 +160,55 @@ export function zapsLoaderToSvelteReadable(event: Event) {
     filter(z => z !== null)
   ).subscribe(zap => zaps.update((prev: ParsedZapEvent[]) => [...prev, zap]));
   return readonly(zaps);
+}
+
+
+export interface AnimeEntry {
+  identifier: string;
+  score: ReturnType<typeof animeScore>;
+  status: WatchStatus;
+  anime: AnimeData | null;
+}
+
+export function watchListLoader(userPub: string) {
+  const anime = writable<AnimeEntry[]>([]);
+  addressLoader({
+    kind: 31111,
+    identifier: 'anime-list',
+    pubkey: userPub,
+  }).pipe(
+    map(watchList => watchList.tags
+      .filter(tag => tag[0] === 'i')
+      .map(tag => ({
+        identifier: tag[1],
+        score: animeScore(tag[2]),
+        status: normalizeWatchStatus(tag[3])
+      }))
+    ),
+    mergeMap(sortedList => from(sortedList).pipe(
+      distinctUntilKeyChanged('identifier'),
+      mergeMap(entry => animeEventLoader(entry.identifier).pipe(
+        map(animeData => ({
+          identifier: entry.identifier,
+          score: entry.score,
+          status: entry.status,
+          anime: animeData
+        }))
+      ))
+    )),
+    filter(x => x.anime !== null),
+    distinctUntilKeyChanged('identifier'),
+  ).subscribe((e: AnimeEntry) => anime.update(prev => {
+    if (!prev.some(existing => existing.identifier === e.identifier)) {
+      return [...prev, e].toSorted((a, b) => {
+        if (a.status !== b.status) return a.status - b.status;
+        if (a.score !== b.score) return b.score.value - a.score.value;
+        return b.identifier.localeCompare(a.identifier);
+      });
+    }
+    return prev;
+  }));
+  return (anime);
 }
 
 export function reactionsLoaderToSvelteReadable(event: Event) {

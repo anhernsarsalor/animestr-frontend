@@ -42,8 +42,6 @@
 		if (e.key != 'Enter') return;
 		if (search.startsWith('npub') || search.startsWith('nprofile')) {
 			goto(`/user/${search}`);
-		} else {
-			goto(`/anime/${search}`);
 		}
 		searchDialog?.close();
 	}
@@ -110,7 +108,7 @@
 					</a>
 				</li>
 				<li>
-					<a href="/watch-list">
+					<a href="/user/{nostr.activeUser?.npub}/watch-list">
 						<Icon icon="line-md:watch-twotone" /> Watch List
 					</a>
 				</li>

@@ -51,8 +51,7 @@
 >
 	<button
 		class="bg-base-300 flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 shadow-sm"
-		class:bg-primary={ndk.activeUser &&
-			authorList.includes(ndk.activeUser && ndk.activeUser!.pubkey)}
+		class:bg-primary={ndk.activeUser && authorList.has(ndk.activeUser && ndk.activeUser!.pubkey)}
 		onclick={() => onCopyReaction?.()}
 	>
 		{#if reactionEmoji[emoji]}
@@ -63,9 +62,9 @@
 		<span
 			class="text-base-content/80 text-sm font-medium"
 			class:text-primary-content={ndk.activeUser &&
-				authorList.includes(ndk.activeUser && ndk.activeUser!.pubkey)}
+				authorList.has(ndk.activeUser && ndk.activeUser!.pubkey)}
 		>
-			{authorList.length}
+			{authorList.size}
 		</span>
 	</button>
 	{#if tooltipActive}
