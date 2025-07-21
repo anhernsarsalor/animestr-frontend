@@ -29,7 +29,7 @@
 						{anime.anime?.title}
 					</a>
 					<button class="anime-status btn btn-ghost" onclick={() => editStatus(anime)}>
-						{watchStatusToName(anime.status)}
+						{watchStatusToName(group)}
 					</button>
 					<button
 						style:color={anime.score.color}

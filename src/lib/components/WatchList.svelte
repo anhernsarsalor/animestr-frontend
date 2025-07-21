@@ -70,13 +70,14 @@
 		if (indexOfExisting !== -1) $watchList.splice(indexOfExisting, 1);
 		$watchList.push({
 			identifier: selectedAnime!.identifiers[0].value,
-			status: WatchStatus.Watching,
+			status: newAnimeStatus,
 			score: newAnimeScore,
 			anime: selectedAnime!
 		});
 		$watchList = $watchList;
 		animeSearch = '';
 		newAnimeScore = animeScore(50);
+		newAnimeStatus = WatchStatus.Completed;
 		addDialog?.close();
 		saveList();
 	}
@@ -150,7 +151,17 @@
 				step={0.01}
 				bind:value={newAnimeScore.value}
 			/>
-			<span style:color={newAnimeScore.color} class="text-bold">{newAnimeScore}</span>
+			<span style:color={newAnimeScore.color} class="text-bold">{newAnimeScore.toString()}</span>
+		</fieldset>
+		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box border p-4">
+			<legend class="fieldset-legend">Status</legend>
+			<select class="select select-ghost" bind:value={newAnimeStatus}>
+				<option value={0}>Watching</option>
+				<option value={1}>Completed</option>
+				<option value={2}>On-Hold</option>
+				<option value={3}>Dropped</option>
+				<option value={4}>Planned</option>
+			</select>
 		</fieldset>
 		<button class="btn btn-primary mt-4" onclick={doAddAnime}> Add! </button>
 	</div>

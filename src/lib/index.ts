@@ -59,18 +59,24 @@ const zapsLoader = createZapsLoader(pool, {
 });
 
 const reactionsLoader = createReactionsLoader(pool);
-const iTagLoader = createTagValueLoader(pool, "i");
+const iTagLoader = createTagValueLoader(pool, "i", {
+  cacheRequest,
+  eventStore
+});
 
 export function loadAllAnimeEvents() {
-  pool.relay('wss://anime.nostr1.com').subscription({
+  const events = writable<AnimeData[]>([]);
+  createTimelineLoader(pool, relays, [{
     kinds: [30010],
-    '#t': ['animestr']
-  }).pipe(
-    onlyEvents(),
-    mapEventsToStore(eventStore),
+    '#t': ['animestr'],
+  }], {
+    cache: cacheRequest,
+    eventStore
+  })(0).pipe(
     map(parseAnimeEvent),
-    filter(event => event !== null),
-  ).subscribe(event => { })
+    filter(e => e !== null)
+  ).subscribe(event => events.update((prev: AnimeData[]) => [...prev, event]));
+  return readonly(events);
 }
 
 export function animeLoaderWithFilter(filterString: string, limit: number = 10) {

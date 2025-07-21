@@ -112,9 +112,9 @@ export function animeScore(value: number | string | { value: number }) {
     return isNaN(parsed) ? 50 : Math.min(100, Math.max(0, parsed));
   }
 
-  return new Proxy({
-    value: cleanValue(value),
-  } as {
+  const internalState = $state({ value: cleanValue(value) });
+
+  return new Proxy(internalState as {
     value: number;
     color: string;
     toString(): string;
@@ -126,7 +126,7 @@ export function animeScore(value: number | string | { value: number }) {
       if (prop === Symbol.toPrimitive) return () => target.value;
       if (prop === "color") return colorScore(target.value);
       if (prop === "toString") return () => target.value.toFixed(2);
-      return target.value;
+      return target[prop];
     },
     set(target, prop, newValue) {
       if (prop !== "value") return false;
@@ -142,26 +142,13 @@ export enum WatchStatus {
   OnHold = 2,
   Dropped = 3,
   Planned = 4,
+  Unknown = 5
 };
 
 export function watchStatusToName(ws?: WatchStatus | string | number): string {
   if (!ws) return 'unknown';
 
-  if (typeof ws === 'string') {
-    const wsAsInt = parseInt(ws);
-    let enumValue;
-    if (!isNaN(wsAsInt))
-      enumValue = (WatchStatus as any)[(WatchStatus as any)[wsAsInt]];
-    else
-      enumValue = (WatchStatus as any)[ws];
-    if (typeof enumValue === 'number' && enumValue >= 0 && enumValue <= 4) {
-      ws = enumValue;
-    } else {
-      return 'unknown';
-    }
-  }
-
-  if (typeof ws !== 'number') return 'unknown';
+  ws = normalizeWatchStatus(ws);
 
   switch (ws) {
     case WatchStatus.Watching: return 'watching';
@@ -173,11 +160,21 @@ export function watchStatusToName(ws?: WatchStatus | string | number): string {
   }
 }
 
-export function normalizeWatchStatus(status?: string) {
-  if (!status) return WatchStatus.Completed;
-  const keys = Object.keys(WatchStatus);
-  const keyName = status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
-  if (keys.includes(keyName))
-    return WatchStatus[keyName];
-  return WatchStatus.Completed;
+export function normalizeWatchStatus(status?: WatchStatus | string | number) {
+  if (typeof status === "undefined" || status === null) return WatchStatus.Completed;
+  if (typeof status === 'string') {
+    const wsAsInt = parseInt(status);
+    let enumValue;
+    if (!isNaN(wsAsInt))
+      enumValue = (WatchStatus as any)[(WatchStatus as any)[wsAsInt]];
+    else
+      enumValue = (WatchStatus as any)[status];
+    if (typeof enumValue === 'number' && enumValue >= 0 && enumValue <= 4)
+      return enumValue;
+    else
+      return WatchStatus.Unknown;
+  }
+  if (typeof status === 'number' && status >= 0 && status <= 4)
+    return (WatchStatus as any)[(WatchStatus as any)[status]]
+  return WatchStatus.Unknown;
 }
