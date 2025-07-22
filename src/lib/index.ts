@@ -82,7 +82,10 @@ const zapsLoader = createZapsLoader(pool, {
   cacheRequest,
 });
 
-const reactionsLoader = createReactionsLoader(pool);
+const reactionsLoader = createReactionsLoader(pool, {
+  eventStore,
+  cacheRequest
+});
 const iTagLoader = createTagValueLoader(pool, "i", {
   cacheRequest,
   eventStore
