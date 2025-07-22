@@ -21,6 +21,11 @@
 
 	let page = $state(0);
 	let filter = $state('');
+
+	$effect(() => {
+		if (filter || !filter) page = 0; // XXX: filter || !filter is a hack for making svelte happy and work both when there is a filter and when there isn't
+	});
+
 	let filteredEmojiPacks = $derived(
 		filter === ''
 			? $allEmojiPacks
@@ -95,7 +100,7 @@
 	{:else}
 		<span></span>
 	{/if}
-	{#if itemsInPage.length > page * 10}
+	{#if (page + 1) * 10 < filteredEmojiPacks.length}
 		<button class="btn btn-secondary" onclick={() => (page = page + 1)}>Next</button>
 	{/if}
 </div>
@@ -150,7 +155,7 @@
 	{:else}
 		<span></span>
 	{/if}
-	{#if page * 10 < itemsInPage.length}
+	{#if (page + 1) * 10 < filteredEmojiPacks.length}
 		<button class="btn btn-secondary" onclick={() => (page = page + 1)}>Next</button>
 	{/if}
 </div>

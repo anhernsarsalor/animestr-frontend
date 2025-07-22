@@ -346,7 +346,7 @@ export function emojiPacksSvelteReadable() {
   })().subscribe(event => {
     const identifier = event.tags.find(t => t[0] === 'd')?.[1];
     if (!identifier) return;
-    const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled Pack';
+    const title = event.tags.find(t => t[0] === 'title')?.[1] || identifier;
     const emoji = event.tags.filter(t => t[0] === 'emoji').map(t => t.slice(1));
     const pack = {
       identifier,
