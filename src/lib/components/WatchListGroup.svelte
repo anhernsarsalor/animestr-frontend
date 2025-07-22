@@ -1,19 +1,23 @@
 <script lang="ts">
 	import type { AnimeEntry } from '$lib';
-	import { watchStatusToName, type WatchStatus } from '$lib/utils.svelte';
+	import { WatchStatus, watchStatusToName } from '$lib/utils.svelte';
 	import { fade } from 'svelte/transition';
 
 	let {
 		group,
 		anime,
 		editScore,
-		editStatus
+		editStatus,
+		editProgress
 	}: {
 		group: WatchStatus;
 		anime: AnimeEntry[];
 		editScore: (anime: AnimeEntry) => void;
 		editStatus: (anime: AnimeEntry) => void;
+		editProgress: (anime: AnimeEntry) => void;
 	} = $props();
+
+	$inspect(WatchStatus.Completed, group);
 </script>
 
 <h1 class="text-xl">{watchStatusToName(group)}</h1>
@@ -28,6 +32,13 @@
 					<a href="/anime/{anime.identifier}" class="title">
 						{anime.anime?.title}
 					</a>
+					{#if watchStatusToName(group) !== watchStatusToName(WatchStatus.Completed)}
+						<button class="anime-progress btn btn-ghost" onclick={() => editProgress(anime)}>
+							{anime.progress}/{anime.anime?.episodes}
+						</button>
+					{:else}
+						<span></span>
+					{/if}
 					<button class="anime-status btn btn-ghost" onclick={() => editStatus(anime)}>
 						{watchStatusToName(group)}
 					</button>
@@ -68,7 +79,7 @@
 
 	.anime-info {
 		display: grid;
-		grid-template-columns: 1fr auto auto;
+		grid-template-columns: 1fr auto auto auto;
 		gap: 2em;
 		flex-grow: 1;
 	}

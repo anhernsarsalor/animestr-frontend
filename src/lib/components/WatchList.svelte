@@ -45,7 +45,8 @@
 					'i',
 					anime.identifier,
 					anime.score.toString(),
-					anime.status.toString()
+					anime.status.toString(),
+					anime.progress.toString()
 				])
 			]
 		});
@@ -55,11 +56,13 @@
 	let addDialog: HTMLDialogElement | undefined;
 	let editScoreDialog: HTMLDialogElement | undefined;
 	let editStatusDialog: HTMLDialogElement | undefined;
+	let editProgressDialog: HTMLDialogElement | undefined;
 
 	let selectedAnime: AnimeData | null = $state(null);
 	let animeSearch = $state('');
 	let newAnimeScore = $state(animeScore(50));
 	let newAnimeStatus = $state(WatchStatus.Completed);
+	let newAnimeProgress = $state(0);
 
 	function doAddAnime() {
 		if (animeSearch.length < 2) return;
@@ -72,12 +75,14 @@
 			identifier: selectedAnime!.identifiers[0].value,
 			status: newAnimeStatus,
 			score: newAnimeScore,
-			anime: selectedAnime!
+			anime: selectedAnime!,
+			progress: newAnimeProgress
 		});
 		$watchList = $watchList;
 		animeSearch = '';
 		newAnimeScore = animeScore(50);
 		newAnimeStatus = WatchStatus.Completed;
+		newAnimeProgress = 0;
 		addDialog?.close();
 		saveList();
 	}
@@ -97,16 +102,25 @@
 		editStatusDialog?.showModal();
 	}
 
+	function editProgress(anime: AnimeEntry) {
+		if (pubkey !== ndk.signer?.pubkey!) return;
+		newAnimeProgress = 0;
+		editingAnime = anime.identifier;
+		editProgressDialog?.showModal();
+	}
+
 	function doEditScore() {
 		const indexOfExisting = $watchList.findIndex((anime) => anime.identifier === editingAnime);
 		if (indexOfExisting === -1) return;
 		const status = $watchList[indexOfExisting].status;
+		const progress = $watchList[indexOfExisting].progress;
 		$watchList.splice(indexOfExisting, 1);
 		$watchList.push({
 			identifier: editingAnime,
 			score: newAnimeScore,
 			status,
-			anime: selectedAnime!
+			anime: selectedAnime!,
+			progress
 		});
 		$watchList = $watchList;
 		editingAnime = '';
@@ -119,17 +133,39 @@
 		const indexOfExisting = $watchList.findIndex((anime) => anime.identifier === editingAnime);
 		if (indexOfExisting === -1) return;
 		const score = $watchList[indexOfExisting].score;
+		const progress = $watchList[indexOfExisting].progress;
 		$watchList.splice(indexOfExisting, 1);
 		$watchList.push({
 			identifier: editingAnime,
 			score,
 			status: newAnimeStatus,
-			anime: selectedAnime!
+			anime: selectedAnime!,
+			progress
 		});
 		$watchList = $watchList;
 		editingAnime = '';
 		newAnimeStatus = WatchStatus.Completed;
 		editStatusDialog?.close();
+		saveList();
+	}
+
+	function doEditProgress() {
+		const indexOfExisting = $watchList.findIndex((anime) => anime.identifier === editingAnime);
+		if (indexOfExisting === -1) return;
+		const score = $watchList[indexOfExisting].score;
+		const status = $watchList[indexOfExisting].status;
+		$watchList.splice(indexOfExisting, 1);
+		$watchList.push({
+			identifier: editingAnime,
+			score,
+			status,
+			anime: selectedAnime!,
+			progress: newAnimeProgress
+		});
+		$watchList = $watchList;
+		editingAnime = '';
+		newAnimeProgress = 0;
+		editProgressDialog?.close();
 		saveList();
 	}
 </script>
@@ -210,6 +246,19 @@
 	</form>
 </dialog>
 
+<dialog bind:this={editProgressDialog} class="modal">
+	<div class="modal-box">
+		<fieldset class="fieldset bg-base-200 border-base-300 rounded-box border p-4">
+			<legend class="fieldset-legend">Edit Progress</legend>
+			<input min="0" class="input" type="number" bind:value={newAnimeProgress} />
+		</fieldset>
+		<button class="btn btn-primary mt-4" onclick={doEditProgress}>Save</button>
+	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
+</dialog>
+
 {#if pubkey === nostr.activeUser?.pubkey}
 	<button class="btn btn-primary mt-4 mb-4 w-full" onclick={() => addDialog?.showModal()}>
 		<Icon icon="mingcute:plus-fill" /> Add
@@ -217,7 +266,7 @@
 {/if}
 
 {#each Object.entries($groupedWatchList) as group}
-	<WatchListGroup group={group[0]} anime={group[1]} {editScore} {editStatus} />
+	<WatchListGroup group={group[0]} anime={group[1]} {editScore} {editStatus} {editProgress} />
 {:else}
 	<p>The list is either loading, or this user doesn't have any anime on their list :(</p>
 {/each}

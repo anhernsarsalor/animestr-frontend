@@ -3,9 +3,11 @@
 	import Icon from '@iconify/svelte';
 	import { animeEventLoader } from '$lib';
 
-	let { animeId, source, score = null, status = null } = $props();
+	let { animeId, source, score = null, progress = null, status = null } = $props();
 
 	let animeData = animeEventLoader(`${source}:${animeId}`);
+
+	let totalEpisodes = $derived($animeData?.episodes);
 
 	let isLoading = $derived(!$animeData);
 </script>
@@ -54,6 +56,11 @@
 					{#if status !== null}
 						<div class="badge badge-secondary">
 							Status: {status}
+						</div>
+					{/if}
+					{#if progress !== null && progress > 0}
+						<div class="badge badge-secondary">
+							Progress: {progress}/{totalEpisodes}
 						</div>
 					{/if}
 				</div>

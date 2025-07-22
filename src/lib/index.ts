@@ -173,7 +173,18 @@ export interface AnimeEntry {
   identifier: string;
   score: ReturnType<typeof animeScore>;
   status: WatchStatus;
+  progress: number;
   anime: AnimeData | null;
+}
+
+export function normalizeProgress(progress?: string | number) {
+  if (typeof progress === "undefined" || progress === null) return 0;
+  if (typeof progress === "number")
+    if (progress > 0 && !isNaN(progress)) return progress;
+  const progressNumber = Number.parseInt(progress.toString())
+  if (isNaN(progressNumber)) return 0;
+  if (progressNumber < 0) return 0;
+  return progressNumber;
 }
 
 export function watchListLoader(userPub: string) {
@@ -188,7 +199,8 @@ export function watchListLoader(userPub: string) {
       .map(tag => ({
         identifier: tag[1],
         score: animeScore(tag[2]),
-        status: normalizeWatchStatus(tag[3])
+        status: normalizeWatchStatus(tag[3]),
+        progress: normalizeProgress(tag[4])
       }))
     ),
     mergeMap(sortedList => from(sortedList).pipe(
@@ -198,7 +210,8 @@ export function watchListLoader(userPub: string) {
           identifier: entry.identifier,
           score: entry.score,
           status: entry.status,
-          anime: animeData
+          anime: animeData,
+          progress: entry.progress,
         }))
       ))
     )),

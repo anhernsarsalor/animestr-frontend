@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { normalizeProgress } from '$lib';
 	import { watchStatusToName } from '$lib/utils.svelte';
 	import AnimeReference from './AnimeReference.svelte';
 	import type { Event } from 'nostr-tools';
@@ -12,11 +13,12 @@
 	let lastEntryId = $derived(lastEntryIdentifier[1]);
 	let score = $derived(parseFloat(lastEntry[2]));
 	let status = $derived(watchStatusToName(lastEntry[3]));
+	let progress = $derived(normalizeProgress(lastEntry[4]));
 </script>
 
 <h1 class="text-info text-center text-2xl">Watch List Update</h1>
 <div class="card bg-base-300 p-2">
 	<div class="card-body">
-		<AnimeReference source={lastEntrySource} animeId={lastEntryId} {score} {status} />
+		<AnimeReference source={lastEntrySource} animeId={lastEntryId} {score} {status} {progress} />
 	</div>
 </div>
