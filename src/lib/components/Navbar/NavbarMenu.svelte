@@ -26,6 +26,10 @@
 					<Icon icon="line-md:home-simple-twotone" />
 					Home
 				</a>
+				<a href="/emoji-packs">
+					<Icon icon="ph:package-duotone" />
+					Emoji Packs
+				</a>
 			</li>
 		</ul>
 	</div>

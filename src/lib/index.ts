@@ -24,7 +24,6 @@ const relays = [
   "wss://relay.nostr.wirednet.jp",
   "wss://at.nostrworks.com",
   "wss://atlas.nostr.land",
-  "wss://nostr.wine",
   "wss://wot.utxo.one",
   "wss://relay.damus.io",
 ];
@@ -282,22 +281,25 @@ export function reactionsLoaderToSvelteReadable(event: Event) {
   return readonly(reactions);
 }
 
+export function emojiPreferenceEvent(pubkey: string) {
+  return addressLoader({
+    kind: 10030,
+    pubkey,
+    relays
+  });
+}
+
 export function loadUserEmojiPreference(pubkey: string) {
   const emoji = writable<[string, string][]>([]);
 
-  addressLoader({
-    kind: 10030,
-    pubkey: pubkey,
-    relays: relays,
-  }).subscribe((event) => {
+  emojiPreferenceEvent(pubkey).subscribe((event) => {
     const emojiTags = event.tags.filter(x => x[0] === 'emoji');
     emojiTags.forEach(tag => emoji.update((prev) => [...prev, [
       tag[1], tag[2]
     ]]))
-    const emojiSets = event.tags.filter(x => x[0] === 'a' && x[1].startsWith(`30030:`)).map(x => x[1].split(':').splice(1));
-    console.log(emojiSets)
-    if (emojiSets.length > 0) {
-      from(emojiSets).pipe(
+    const emojiPacks = event.tags.filter(x => x[0] === 'a' && x[1].startsWith(`30030:`)).map(x => x[1].split(':').splice(1));
+    if (emojiPacks.length > 0) {
+      from(emojiPacks).pipe(
         mergeMap(s => addressLoader({
           kind: 30030,
           identifier: s[1],
@@ -314,4 +316,46 @@ export function loadUserEmojiPreference(pubkey: string) {
   });
 
   return readonly(emoji);
-} 
+}
+
+export function loadUserEmojiPacks(pubkey: string) {
+  const packs = writable<string[][]>([]);
+
+  emojiPreferenceEvent(pubkey).subscribe((event) => {
+    const emojiPacks = event.tags.filter(x => x[0] === 'a' && x[1].startsWith(`30030:`)).map(x => x[1].split(':').slice(1));
+    packs.update(_ => emojiPacks);
+  });
+
+  return readonly(packs);
+}
+
+export interface EmojiPack {
+  identifier: string;
+  author: string;
+  title: string;
+  emoji: string[][];
+}
+
+export function emojiPacksSvelteReadable() {
+  const packs = writable<EmojiPack[]>([]);
+  createTimelineLoader(pool, relays, {
+    kinds: [30030]
+  }, {
+    cache: cacheRequest,
+    eventStore,
+  })().subscribe(event => {
+    const identifier = event.tags.find(t => t[0] === 'd')?.[1];
+    if (!identifier) return;
+    const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled Pack';
+    const emoji = event.tags.filter(t => t[0] === 'emoji').map(t => t.slice(1));
+    const pack = {
+      identifier,
+      title,
+      author: event.pubkey,
+      emoji,
+    };
+    packs.update((prev: EmojiPack[]) => [...prev, pack])
+  })
+  // events.update((prev: Event[]) => [...prev, event].toSorted((a, b) => b.created_at - a.created_at)));
+  return readonly(packs);
+}
