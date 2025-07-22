@@ -3,7 +3,7 @@
 	import { ndk, nostr } from '$lib/stores/signerStore.svelte';
 	import EmojiPicker, { type EmojiData } from './EmojiPicker.svelte';
 	import PostReaction from './PostReaction.svelte';
-	import type { Event } from 'nostr-tools';
+	import type { Event, NostrEvent } from 'nostr-tools';
 	import { reactionsLoaderToSvelteReadable } from '$lib';
 
 	let { event }: { event: Event } = $props();
@@ -18,12 +18,18 @@
 			console.warn('No active user to react with');
 			return;
 		}
-		if (typeof emoji !== 'string') return onEmojiSelected(emoji.native);
 		const reactionEvent = {
 			kind: 7,
-			tags: [['e', event.id]],
-			content: emoji
-		};
+			tags: [['e', event.id]]
+		} as NostrEvent;
+		if (typeof emoji !== 'string') {
+			if (emoji.native) return onEmojiSelected(emoji.native);
+			if (emoji.src) {
+				reactionEvent.content = emoji.name;
+				reactionEmoji[emoji.name] = emoji.src;
+				emoji = emoji.name;
+			} else return;
+		}
 		if (reactionEmoji[emoji]) reactionEvent.tags.push(['emoji', emoji, reactionEmoji[emoji]]);
 		const reaction = new NDKEvent(ndk, reactionEvent);
 		await reaction.publish();

@@ -12,6 +12,7 @@
 		native: string;
 		unified: string;
 		keywords: string[];
+		src: string;
 		shortcodes: string;
 	}
 
