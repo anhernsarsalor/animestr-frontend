@@ -44,9 +44,11 @@
 {/if}
 
 {#if events.length === 0}
-	<div class="flex justify-center py-8">
+	<div class="flex flex-col justify-center justify-items-center py-8">
 		<Loading inline />
-		<div class="text-base-content/70 py-8 text-center">{emptyMessage}</div>
+		{#if emptyMessage}
+			<div class="text-base-content/70 py-8 text-center">{emptyMessage}</div>
+		{/if}
 	</div>
 {:else}
 	<div class="space-y-4">
