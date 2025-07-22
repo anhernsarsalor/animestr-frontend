@@ -1,8 +1,8 @@
 <script lang="ts">
 	import UserAvatar from './UserAvatar.svelte';
-	import { ndk, nostr } from '$lib/stores/signerStore.svelte';
-	import { NDKEvent } from '@nostr-dev-kit/ndk';
+	import { nostr } from '$lib/stores/signerStore.svelte';
 	import type { Event } from 'nostr-tools';
+	import { createEvent } from '$lib';
 
 	let { replyTo }: { replyTo?: Event } = $props();
 
@@ -34,8 +34,7 @@
 				event.tags.push(['e', replyTo.id, '', 'reply']);
 			} else event.tags.push(['e', replyTo.id, '', 'root']);
 		}
-		const newPost = new NDKEvent(ndk, event);
-		await newPost.publish();
+		await createEvent(event);
 		content = '';
 	}
 </script>

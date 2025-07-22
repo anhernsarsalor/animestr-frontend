@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { watchListLoader, type AnimeEntry } from '$lib';
+	import { createEvent, watchListLoader, type AnimeEntry } from '$lib';
 	import type { AnimeData } from '$lib/nostr/types';
 	import { initSigner, ndk, nostr } from '$lib/stores/signerStore.svelte';
-	import { NDKEvent } from '@nostr-dev-kit/ndk';
 	import Icon from '@iconify/svelte';
 	import AnimeSearchResults from './AnimeSearchResults.svelte';
 	import { animeScore, WatchStatus } from '$lib/utils.svelte';
@@ -35,7 +34,7 @@
 	async function saveList() {
 		if (pubkey !== ndk.signer?.pubkey!) return;
 		await initSigner();
-		const listEvent = new NDKEvent(ndk, {
+		await createEvent({
 			kind: 31111,
 			tags: [
 				['t', 'animestr'],
@@ -50,7 +49,6 @@
 				])
 			]
 		});
-		await listEvent.publishReplaceable();
 	}
 
 	let addDialog: HTMLDialogElement | undefined;

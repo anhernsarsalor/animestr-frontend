@@ -1,6 +1,6 @@
-import { EventStore, mapEventsToStore } from "applesauce-core";
+import { EventStore } from "applesauce-core";
 import { createAddressLoader, createEventLoader, createReactionsLoader, createTagValueLoader, createTimelineLoader, createZapsLoader } from "applesauce-loaders/loaders";
-import { onlyEvents, RelayPool } from "applesauce-relay";
+import { RelayPool } from "applesauce-relay";
 import type { Event, Filter, NostrEvent } from "nostr-tools";
 import { openDB, getEventsForFilters, addEvents } from "nostr-idb";
 import { bufferTime, distinctUntilKeyChanged, filter, from, map, mergeMap, take } from "rxjs";
@@ -10,6 +10,8 @@ import { animeScore, decodeBolt11Amount, normalizeWatchStatus, WatchStatus } fro
 import { NDKUser } from "@nostr-dev-kit/ndk";
 import parseAnimeEvent from "./nostr/parseAnimeEvent";
 import type { AnimeData } from "./nostr/types";
+import { EventFactory, type EventFactoryTemplate, type EventOperation } from "applesauce-factory";
+import { ExtensionSigner } from "applesauce-signers";
 
 const cache = await openDB();
 
@@ -38,6 +40,29 @@ eventStore.insert$
       console.log("Saved events to cache", events.length);
     });
   });
+
+const signer = new ExtensionSigner();
+const eventFactory = new EventFactory({
+  signer,
+  client: {
+    name: "animestr",
+    address: { identifier: "animestr", pubkey: "c5d3f2d17cde84c4d84a8148df2dfc9cd520fc82ddd76284ff3b6e3e37f31eb2" },
+  },
+});
+
+export async function createEvent(template: EventFactoryTemplate, ...operations: (EventOperation | undefined)[]) {
+  const note = await eventFactory.build(template, ...operations)
+  const signed = await eventFactory.sign(note);
+  pool.publish(relays, signed).subscribe({
+    next(publishResponse) {
+      if (publishResponse.ok) {
+        eventStore.add(signed)
+        return;
+      }
+      console.log(`Failed to publish event to ${publishResponse.from}: ${publishResponse.message}`);
+    }
+  });
+}
 
 function cacheRequest(filters: Filter[]) {
   return getEventsForFilters(cache, filters);
@@ -284,7 +309,6 @@ export function loadUserEmojiPreference(pubkey: string) {
         emojiTags.forEach(tag => emoji.update((prev) => [...prev, [
           tag[1], tag[2]
         ]]))
-        console.log(event)
       })
     }
   });
