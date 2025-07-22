@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { injectAnalytics } from '@vercel/analytics/sveltekit';
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
+	injectAnalytics();
+	injectSpeedInsights();
 
 	import Loading from '$lib/components/Loading.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
-	import { loadAllAnimeEvents, timelineLoaderToSvelteReadable } from '$lib';
+	import { loadAllAnimeEvents } from '$lib';
 
 	let loading = $state(true);
 
