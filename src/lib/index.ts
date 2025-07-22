@@ -256,3 +256,38 @@ export function reactionsLoaderToSvelteReadable(event: Event) {
   }));
   return readonly(reactions);
 }
+
+export function loadUserEmojiPreference(pubkey: string) {
+  const emoji = writable<[string, string][]>([]);
+
+  addressLoader({
+    kind: 10030,
+    pubkey: pubkey,
+    relays: relays,
+  }).subscribe((event) => {
+    const emojiTags = event.tags.filter(x => x[0] === 'emoji');
+    emojiTags.forEach(tag => emoji.update((prev) => [...prev, [
+      tag[1], tag[2]
+    ]]))
+    const emojiSets = event.tags.filter(x => x[0] === 'a' && x[1].startsWith(`30030:`)).map(x => x[1].split(':').splice(1));
+    console.log(emojiSets)
+    if (emojiSets.length > 0) {
+      from(emojiSets).pipe(
+        mergeMap(s => addressLoader({
+          kind: 30030,
+          identifier: s[1],
+          pubkey: s[0],
+          relays
+        }))
+      ).subscribe(event => {
+        const emojiTags = event.tags.filter(x => x[0] === 'emoji');
+        emojiTags.forEach(tag => emoji.update((prev) => [...prev, [
+          tag[1], tag[2]
+        ]]))
+        console.log(event)
+      })
+    }
+  });
+
+  return readonly(emoji);
+} 
