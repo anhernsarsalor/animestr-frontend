@@ -17,7 +17,7 @@
 </script>
 
 <svelte:head>
-	<title>#{hashtag || ''} | Hashtag Feed</title>
+	<title>#{hashtag || ''} | Animestr</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-3xl p-4">

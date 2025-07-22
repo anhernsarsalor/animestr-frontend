@@ -14,6 +14,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Animestr</title>
+</svelte:head>
+
 {#if loading}
 	<Loading />
 {:else}

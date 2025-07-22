@@ -30,7 +30,7 @@
 </script>
 
 <svelte:head>
-	<title>{username} | User Profile</title>
+	<title>{username}'s Profile | Animestr</title>
 </svelte:head>
 
 {#if isLoading}
