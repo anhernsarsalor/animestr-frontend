@@ -29,7 +29,7 @@
 	<div class="bg-base-100 text-base-content flex min-h-screen flex-col">
 		<Navbar />
 
-		<div class="container mx-auto max-w-4xl">
+		<div class="container mx-auto mt-4 max-w-4xl">
 			<slot />
 		</div>
 
