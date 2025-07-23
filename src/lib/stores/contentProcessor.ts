@@ -1,5 +1,4 @@
-import { getUserFromMention } from "$lib/utils.svelte";
-import type { NDKEventId } from "@nostr-dev-kit/ndk";
+import { normalizeToPubkey } from "applesauce-core/helpers";
 
 const HTML_ENTITIES = {
   '<': '&lt;',
@@ -22,7 +21,10 @@ export type ContentSegment = {
   data?: Record<string, any>;
 } | {
   type: "event";
-  content: NDKEventId;
+  content: string;
+} | {
+  type: "mention";
+  content: string;
 };
 
 interface MatchResult {
@@ -362,7 +364,7 @@ export const contentProcessor: ContentProcessor = {
       const nprofileSegments = processTextWithRegex(segment.content, NPROFILE_REGEX, (match) => ({
         type: 'mention',
         content: match[1],
-        data: getUserFromMention(match[1])
+        data: normalizeToPubkey(match[1])
       }));
 
       return nprofileSegments.flatMap(mentionSegment => {
@@ -371,7 +373,7 @@ export const contentProcessor: ContentProcessor = {
         const npubSegments = processTextWithRegex(segment.content, MENTION_REGEX, (match) => ({
           type: 'mention',
           content: match[1],
-          data: getUserFromMention(match[1])
+          data: normalizeToPubkey(match[1])
         }));
 
         return npubSegments.flatMap(npubSegment => {

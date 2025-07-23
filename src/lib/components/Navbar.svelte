@@ -103,12 +103,12 @@
 				onclick={() => document.getElementById('user-menu')?.hidePopover()}
 			>
 				<li>
-					<a href="/user/{nostr.activeUser?.npub}">
+					<a href="/user/{nostr.activeUser}">
 						<Icon icon="line-md:person-twotone" /> Profile
 					</a>
 				</li>
 				<li>
-					<a href="/user/{nostr.activeUser?.npub}/watch-list">
+					<a href="/user/{nostr.activeUser}/watch-list">
 						<Icon icon="line-md:watch-twotone" /> Watch List
 					</a>
 				</li>

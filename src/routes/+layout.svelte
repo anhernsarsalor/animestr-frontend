@@ -9,6 +9,7 @@
 	import Loading from '$lib/components/Loading.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import { loadAllAnimeEvents } from '$lib';
+	import { initSigner } from '$lib/stores/signerStore.svelte';
 
 	let loading = $state(true);
 
@@ -16,6 +17,7 @@
 
 	onMount(async () => {
 		loading = false;
+		await initSigner();
 	});
 </script>
 

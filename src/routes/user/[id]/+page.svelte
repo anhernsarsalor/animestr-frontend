@@ -3,17 +3,17 @@
 	import { page } from '$app/state';
 	import Loading from '$lib/components/Loading.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
-	import { getUserFromMention } from '$lib/utils.svelte';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
 	import { profileLoader, timelineLoaderToSvelteReadable } from '$lib';
-	import { getDisplayName, getProfileContent } from 'applesauce-core/helpers';
+	import { getDisplayName, getProfileContent, normalizeToPubkey } from 'applesauce-core/helpers';
 	import WatchList from '$lib/components/WatchList.svelte';
+	import { npubEncode } from 'nostr-tools/nip19';
 
-	let userId = $derived(page.params.id);
-	let user = $derived(getUserFromMention(userId));
-	let profileRaw = $derived(profileLoader(user.pubkey!));
+	let pubkey = $derived(normalizeToPubkey(page.params.id));
+	let npub = $derived(npubEncode(pubkey));
+	let profileRaw = $derived(profileLoader(pubkey));
 	let profile = $derived($profileRaw ? getProfileContent($profileRaw) : undefined);
-	let username = $derived(getDisplayName(profile, user.npub));
+	let username = $derived(getDisplayName(profile, npub));
 
 	let isLoading = $derived(!profile);
 
@@ -22,7 +22,7 @@
 	let events = $derived(
 		timelineLoaderToSvelteReadable({
 			kinds: [1, 31111],
-			authors: [user.pubkey]
+			authors: [pubkey]
 		})
 	);
 
@@ -51,7 +51,7 @@
 		{/if}
 		<div class="bg-base-200 mb-6 rounded-lg p-6 pt-16 shadow-sm">
 			<div class:-mt-20={profile?.banner} class="avatar">
-				<UserAvatar {user} />
+				<UserAvatar user={pubkey} />
 			</div>
 
 			<div class="flex flex-col">
@@ -63,7 +63,7 @@
 					{/if}
 				</h1>
 				<div class="text-base-content/70 mb-3 font-mono text-sm">
-					{user.npub}
+					{npub}
 				</div>
 			</div>
 		</div>
@@ -93,7 +93,7 @@
 				bind:group={selectedTab}
 			/>
 			<div class="tab-content bg-base-100 border-base-300 p-6">
-				<WatchList pubkey={user.pubkey} />
+				<WatchList {pubkey} />
 			</div>
 		</div>
 	</div>

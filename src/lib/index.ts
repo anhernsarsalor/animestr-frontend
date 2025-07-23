@@ -7,7 +7,6 @@ import { bufferTime, distinctUntilKeyChanged, filter, from, map, mergeMap, take 
 import { isFromCache } from "applesauce-core/helpers";
 import { readonly, writable } from "svelte/store";
 import { animeScore, decodeBolt11Amount, normalizeWatchStatus, WatchStatus } from "./utils.svelte";
-import { NDKUser } from "@nostr-dev-kit/ndk";
 import parseAnimeEvent from "./nostr/parseAnimeEvent";
 import type { AnimeData } from "./nostr/types";
 import { EventFactory, type EventFactoryTemplate, type EventOperation } from "applesauce-factory";
@@ -154,7 +153,7 @@ export function eventLoader(eventId: string) {
 }
 
 export type ParsedZapEvent = {
-  user: NDKUser;
+  user: string;
   amount: number;
   message?: string;
 };
@@ -185,7 +184,7 @@ export function zapsLoaderToSvelteReadable(event: Event) {
       if (amount < 0)
         return null;
       return {
-        user: new NDKUser({ pubkey: senderPubkey }),
+        user: senderPubkey,
         amount,
         message
       }

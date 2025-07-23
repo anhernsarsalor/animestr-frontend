@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEvent, watchListLoader, type AnimeEntry } from '$lib';
 	import type { AnimeData } from '$lib/nostr/types';
-	import { initSigner, ndk, nostr } from '$lib/stores/signerStore.svelte';
+	import { initSigner, nostr } from '$lib/stores/signerStore.svelte';
 	import Icon from '@iconify/svelte';
 	import AnimeSearchResults from './AnimeSearchResults.svelte';
 	import { animeScore, WatchStatus } from '$lib/utils.svelte';
@@ -32,7 +32,7 @@
 	) as unknown as Observable<{ [w: WatchStatus]: AnimeEntry[] }>;
 
 	async function saveList() {
-		if (pubkey !== ndk.signer?.pubkey!) return;
+		if (pubkey !== nostr.activeUser) return;
 		await initSigner();
 		await createEvent({
 			kind: 31111,
@@ -87,21 +87,21 @@
 
 	let editingAnime = $state('');
 	function editScore(anime: AnimeEntry) {
-		if (pubkey !== ndk.signer?.pubkey!) return;
+		if (pubkey !== nostr.activeUser) return;
 		newAnimeScore = animeScore(anime.score);
 		editingAnime = anime.identifier;
 		editScoreDialog?.showModal();
 	}
 
 	function editStatus(anime: AnimeEntry) {
-		if (pubkey !== ndk.signer?.pubkey!) return;
+		if (pubkey !== nostr.activeUser) return;
 		newAnimeStatus = WatchStatus.Completed;
 		editingAnime = anime.identifier;
 		editStatusDialog?.showModal();
 	}
 
 	function editProgress(anime: AnimeEntry) {
-		if (pubkey !== ndk.signer?.pubkey!) return;
+		if (pubkey !== nostr.activeUser) return;
 		newAnimeProgress = 0;
 		editingAnime = anime.identifier;
 		editProgressDialog?.showModal();
@@ -257,7 +257,7 @@
 	</form>
 </dialog>
 
-{#if pubkey === nostr.activeUser?.pubkey}
+{#if pubkey === nostr.activeUser}
 	<button class="btn btn-primary mt-4 mb-4 w-full" onclick={() => addDialog?.showModal()}>
 		<Icon icon="mingcute:plus-fill" /> Add
 	</button>

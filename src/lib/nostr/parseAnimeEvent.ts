@@ -1,8 +1,7 @@
-import type { NDKEvent } from '@nostr-dev-kit/ndk';
 import type { AnimeData } from './types';
 import type { Event } from "nostr-tools/core";
 
-export function parseAnimeEvent(event: NDKEvent | Event): AnimeData | null {
+export default function parseAnimeEvent(event: Event): AnimeData | null {
   if (!event || !event.tags) return null;
 
   const data: AnimeData = {
@@ -100,5 +99,3 @@ export function parseAnimeEvent(event: NDKEvent | Event): AnimeData | null {
 
   return data;
 }
-
-export default parseAnimeEvent;

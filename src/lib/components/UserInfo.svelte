@@ -1,21 +1,23 @@
 <script lang="ts">
-	import { type NDKUser } from '@nostr-dev-kit/ndk';
 	import UserAvatar from './UserAvatar.svelte';
 	import { profileLoader } from '$lib';
-	import { getDisplayName } from 'applesauce-core/helpers';
+	import { getDisplayName, normalizeToPubkey } from 'applesauce-core/helpers';
+	import { npubEncode } from 'nostr-tools/nip19';
 
 	const {
 		user,
 		inline
 	}: {
-		user: NDKUser;
+		user: string;
 		inline?: boolean;
 	} = $props();
 
-	let profile = profileLoader(user.pubkey);
+	let pubkey = normalizeToPubkey(user);
+	let npub = npubEncode(pubkey);
+	let profile = profileLoader(pubkey);
 
 	const username = $derived(getDisplayName($profile));
-	const shortNpub = $derived(user.npub.slice(0, 6) + '...' + user.npub.slice(-6));
+	const shortNpub = $derived(npub.slice(0, 6) + '...' + npub.slice(-6));
 	const isLoadingProfile = $derived(!$profile);
 	const size = $derived(inline ? 30 : undefined);
 </script>
@@ -26,11 +28,11 @@
 	class:flex={!inline}
 	class:inline-flex={inline}
 >
-	<a href={`/user/${user.npub}`} class="transition-opacity hover:opacity-80">
-		<UserAvatar {size} {user} />
+	<a href={`/user/${npub}`} class="transition-opacity hover:opacity-80">
+		<UserAvatar {size} user={pubkey} />
 	</a>
 
-	<a href={`/user/${user.npub}`} class="flex flex-col transition-opacity hover:opacity-80">
+	<a href={`/user/${npub}`} class="flex flex-col transition-opacity hover:opacity-80">
 		<span class="leading-tight font-semibold">
 			{#if username}
 				{username}

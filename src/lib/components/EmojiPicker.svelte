@@ -28,7 +28,7 @@
 	let activePicker: Picker | null;
 
 	let customEmoji = $derived(
-		nostr.activeUser?.pubkey ? loadUserEmojiPreference(nostr.activeUser.pubkey) : readable([])
+		nostr.activeUser ? loadUserEmojiPreference(nostr.activeUser) : readable([])
 	);
 
 	$effect(() => {

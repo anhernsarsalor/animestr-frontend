@@ -13,10 +13,10 @@
 
 	const allEmojiPacks = emojiPacksSvelteReadable();
 	let userEmojiPreferenceEvent = $derived(
-		nostr.activeUser ? emojiPreferenceEvent(nostr.activeUser.pubkey) : readable(null)
+		nostr.activeUser ? emojiPreferenceEvent(nostr.activeUser) : readable(null)
 	);
 	let userEmojiPacks = $derived(
-		nostr.activeUser ? loadUserEmojiPacks(nostr.activeUser.pubkey) : readable([])
+		nostr.activeUser ? loadUserEmojiPacks(nostr.activeUser) : readable([])
 	);
 
 	let page = $state(0);
@@ -39,8 +39,8 @@
 	let itemsInPage = $derived(filteredEmojiPacks.slice(page * 10, (page + 1) * 10));
 
 	function reloadUserEmojiPacks() {
-		userEmojiPreferenceEvent = emojiPreferenceEvent(nostr.activeUser!.pubkey);
-		userEmojiPacks = loadUserEmojiPacks(nostr.activeUser!.pubkey);
+		userEmojiPreferenceEvent = emojiPreferenceEvent(nostr.activeUser!);
+		userEmojiPacks = loadUserEmojiPacks(nostr.activeUser!);
 	}
 
 	async function subscribe(pack: EmojiPack) {

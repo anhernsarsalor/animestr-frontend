@@ -1,23 +1,22 @@
 <script lang="ts">
 	import { profileLoader } from '$lib';
 	import { getColorFromPubkey } from '$lib/utils.svelte';
-	import { type NDKUser } from '@nostr-dev-kit/ndk';
-	import { getProfilePicture } from 'applesauce-core/helpers';
+	import { getProfilePicture, normalizeToPubkey } from 'applesauce-core/helpers';
+	import { npubEncode } from 'nostr-tools/nip19';
 
 	let {
 		user,
 		size = 52,
 		borderWidth = 4
-	}: { user: NDKUser; size?: number; borderWidth?: number } = $props();
+	}: { user: string; size?: number; borderWidth?: number } = $props();
 
-	let profile = profileLoader(user.pubkey);
+	let pubkey = normalizeToPubkey(user);
+	let npub = npubEncode(pubkey);
+	let profile = profileLoader(pubkey);
 	let picture = $derived(
-		getProfilePicture(
-			$profile,
-			`https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=${user.pubkey}`
-		)
+		getProfilePicture($profile, `https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=${pubkey}`)
 	);
-	let border = $derived(getColorFromPubkey(user!.pubkey));
+	let border = $derived(getColorFromPubkey(pubkey));
 </script>
 
 <div class="avatar relative" style:height="{size}px" style:width="{size}px">
@@ -33,6 +32,6 @@
 		style:height="{size - borderWidth * 2}px"
 		style:transform="translate({borderWidth}px, {borderWidth}px)"
 	>
-		<img width={size} class="aspect-square" src={picture} alt="{user.npub} avatar" />
+		<img width={size} class="aspect-square" src={picture} alt="{npub} avatar" />
 	</div>
 </div>

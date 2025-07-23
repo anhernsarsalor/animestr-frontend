@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { NDKUser } from '@nostr-dev-kit/ndk';
 	import { scale } from 'svelte/transition';
 	import UserInfo from './UserInfo.svelte';
 	import dayjs from 'dayjs';
@@ -43,7 +42,6 @@
 		!!event.tags.find((t) => t[0] === 'sensitive-content') ||
 			(usersWhoPostNSFWWithoutMarks.includes(event.pubkey) && event.content.includes('http')) // only mark as sensitive if the user posts an image
 	);
-	let author = $derived(new NDKUser({ pubkey: event.pubkey }));
 </script>
 
 <div
@@ -52,7 +50,7 @@
 >
 	<div class="card-body gap-4 p-4">
 		<div class="flex items-start justify-between">
-			<UserInfo user={author} />
+			<UserInfo user={event.pubkey} />
 			<div
 				class="tooltip tooltip-left"
 				data-tip={dayjs(event.created_at! * 1000).format('YYYY-MM-DD HH:mm:ss')}

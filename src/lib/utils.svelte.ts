@@ -1,24 +1,8 @@
 import { decode as bolt11Decode } from 'light-bolt11-decoder';
-import { NDKUser } from "@nostr-dev-kit/ndk";
-import type WatchList from './components/WatchList.svelte';
 
 export function unique<T>(arr: T[], fn: (el: T) => unknown) {
   const fnOfArr = arr.map(fn);
   return arr.filter((el, index) => fnOfArr.indexOf(fn(el)) === index);
-}
-
-export function isValidHex(str: string) {
-  return str.match(/^[0-9a-fA-F]{1,}$/) !== null;
-}
-
-export function getUserFromMention(user: string) {
-  if (user.startsWith('npub'))
-    return new NDKUser({ npub: user });
-  if (user.startsWith('nprofile'))
-    return new NDKUser({ nprofile: user });
-  if (isValidHex(user))
-    return new NDKUser({ pubkey: user });
-  throw new Error('Invalid user ID');
 }
 
 export function getColorFromPubkey(pubkey: string): string {
@@ -42,18 +26,6 @@ export function decodeBolt11Amount(bolt11Invoice: string): number {
     console.error('Error decoding bolt11:', error);
     return 0;
   }
-}
-
-export function debounce<T>(f: (...args: T[]) => unknown, ms: number) {
-  let id: null | number = null;
-  return (...args: T[]) => {
-    if (id) {
-      clearTimeout(id);
-    }
-    id = setTimeout(() => {
-      f(...args);
-    }, ms);
-  };
 }
 
 export function interpolateBetweenThreeValues(value: number, val1: number, val2: number, val3: number) {

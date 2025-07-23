@@ -2,29 +2,34 @@
 	import PostContent from './PostContent.svelte';
 	import UserInfo from './UserInfo.svelte';
 	import AnimeReference from './AnimeReference.svelte';
-	import { ndk } from '$lib/stores/signerStore.svelte';
-	import { type NDKEventId } from '@nostr-dev-kit/ndk';
 	import Loading from './Loading.svelte';
-	import { getUserFromMention } from '$lib/utils.svelte';
 	import { eventLoader } from '$lib';
 
 	let {
 		eventId
 	}: {
-		eventId: NDKEventId;
+		eventId: string;
 	} = $props();
 
-	let realEventId = $derived(ndk.getEntity(eventId)?.data.id);
+	let event = $derived(eventLoader(eventId));
+	let isLoading = $derived(!$event);
 
-	let event = $derived(eventLoader(realEventId));
+	let identifier = $derived(
+		$event.kind === 30010 ? $event.tags.find((x) => x[0] === 'i')![1].split(':') : []
+	);
 
-	let author = $derived($event && getUserFromMention($event.pubkey));
-
-	let isLoading = $derived(!event);
+	let animeEvent = $derived<{ source: string; animeId: string }>(
+		$event.kind === 30010
+			? {
+					source: identifier[0],
+					animeId: identifier[1]
+				}
+			: { source: '', animeId: '' }
+	);
 </script>
 
 {#if $event && $event.kind === 30010}
-	<AnimeReference {event} animeId="" source="" />
+	<AnimeReference animeId={animeEvent.animeId} source={animeEvent.source} />
 {:else}
 	<div class="collapse-arrow bg-base-200 border-primary/20 collapse my-2 rounded-lg border">
 		<input type="checkbox" checked />
@@ -40,7 +45,7 @@
 			{:else if $event}
 				<div class="pt-2">
 					<div class="mb-2">
-						<UserInfo user={author} />
+						<UserInfo user={$event.pubkey} />
 					</div>
 					<div class="mt-2">
 						<PostContent originalContent={$event.content} content={$event.content} emoji={{}} />

@@ -1,7 +1,6 @@
-import type { NDKEvent } from "@nostr-dev-kit/ndk";
 import type { Event } from "nostr-tools/core";
 
-export function filterNoReplies(event: NDKEvent | Event) {
+export function filterNoReplies(event: Event) {
   for (const tag of event.tags) {
     if (tag[0] !== 'e') continue;
     if (tag[3] === 'reply' || tag[3] === 'root') return false;
@@ -9,8 +8,8 @@ export function filterNoReplies(event: NDKEvent | Event) {
   return true;
 }
 
-export function filterOnlyDirectReplies(parent: NDKEvent | Event) {
-  return function (event: NDKEvent | Event): boolean {
+export function filterOnlyDirectReplies(parent: Event) {
+  return function (event: Event): boolean {
     let hasReplyMarker = false;
     let hasRootMarkerForParent = false;
     for (const tag of event.tags) {
