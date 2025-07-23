@@ -1,12 +1,12 @@
 import { EventStore } from "applesauce-core";
 import { createAddressLoader, createEventLoader, createReactionsLoader, createTagValueLoader, createTimelineLoader, createZapsLoader } from "applesauce-loaders/loaders";
 import { RelayPool } from "applesauce-relay";
-import type { Event, Filter, NostrEvent } from "nostr-tools";
+import type { Event, Filter } from "nostr-tools";
 import { openDB, getEventsForFilters, addEvents } from "nostr-idb";
-import { bufferTime, distinctUntilKeyChanged, filter, from, map, mergeMap, take } from "rxjs";
-import { isFromCache } from "applesauce-core/helpers";
+import { bufferTime, distinctUntilKeyChanged, filter, from, map, mergeMap, scan, take, tap, toArray } from "rxjs";
+import { getZapPayment, getZapSender, isFromCache, type ParsedInvoice } from "applesauce-core/helpers";
 import { readonly, writable } from "svelte/store";
-import { animeScore, decodeBolt11Amount, normalizeWatchStatus, WatchStatus } from "./utils.svelte";
+import { animeScore, normalizeWatchStatus, WatchStatus } from "./utils.svelte";
 import parseAnimeEvent from "./nostr/parseAnimeEvent";
 import type { AnimeData } from "./nostr/types";
 import { EventFactory, type EventFactoryTemplate, type EventOperation } from "applesauce-factory";
@@ -152,48 +152,28 @@ export function eventLoader(eventId: string) {
   });
 }
 
-export type ParsedZapEvent = {
-  user: string;
-  amount: number;
+export interface ParsedZapEvent {
+  payment: ParsedInvoice;
+  sender: string;
   message?: string;
-};
-
-export function zapsLoaderToSvelteReadable(event: Event) {
-  // TODO: use applesauce-core/helpers for some of those operations below
-  const zaps = writable<ParsedZapEvent[]>([]);
-  zapsLoader(event, relays).pipe(
-    map((zap: NostrEvent) => {
-      if (!zap.tags.some(t => t[0] === 'bolt11')) return null;
-      const bolt11Invoice = zap.tags.find((x) => x[0] === 'bolt11')?.[1];
-      const amount = decodeBolt11Amount(bolt11Invoice || '');
-      const description = zap.tags.find((x) => x[0] === 'description')?.[1];
-      let senderPubkey = '';
-      let message = '';
-      if (description)
-        try {
-          const zapRequest = JSON.parse(description);
-          senderPubkey = zapRequest.pubkey;
-          message = zapRequest.content || '';
-        } catch {
-          return null;
-        }
-      if (!senderPubkey)
-        senderPubkey = zap.tags.find((x) => x[0] === 'P')?.[1] || '';
-      if (!senderPubkey)
-        return null;
-      if (amount < 0)
-        return null;
-      return {
-        user: senderPubkey,
-        amount,
-        message
-      }
-    }),
-    filter(z => z !== null)
-  ).subscribe(zap => zaps.update((prev: ParsedZapEvent[]) => [...prev, zap]));
-  return readonly(zaps);
+  amount: number;
 }
 
+export function zapsForEvent(event: Event) {
+  return zapsLoader(event, relays).pipe(
+    map(z => ({
+      payment: getZapPayment(z),
+      sender: getZapSender(z),
+    })),
+    map(z => ({
+      ...z,
+      message: z.payment?.description,
+      amount: z.payment?.amount ? Math.round(z.payment.amount / 1000) : 0
+    } as ParsedZapEvent)),
+    scan((zaps: ParsedZapEvent[], zap: ParsedZapEvent) => [...zaps, zap], []),
+    map(zaps => zaps.sort((a, b) => b.amount - a.amount))
+  );
+}
 
 export interface AnimeEntry {
   identifier: string;
@@ -256,31 +236,44 @@ export function watchListLoader(userPub: string) {
   return (anime);
 }
 
-export function reactionsLoaderToSvelteReadable(event: Event) {
-  const reactionAuthors: Record<string, Set<string>> = {};
-  const emojiMapping: Record<string, string> = {};
+export type ReactionEmoji = { type: 'simple', emoji: string } | { type: 'custom', emoji: string; url: string };
 
-  const reactions = writable<{ authors: Record<string, Set<string>>, emojis: Record<string, string> }>({ authors: {}, emojis: {} });
-  reactionsLoader(event, relays).subscribe((reaction: Event) => reactions.update((prev) => {
-    const emojiTags = reaction.tags.filter((x) => x[0] === 'emoji');
-    if (emojiTags.length === 1) {
-      const [, emoji, url] = emojiTags[0]!;
-      emojiMapping[emoji] = url;
-      if (!reactionAuthors[emoji])
-        reactionAuthors[emoji] = new Set();
-      reactionAuthors[emoji].add(reaction.pubkey);
-    } else {
-      let emoji = reaction.content.trim();
-      if (emoji === '+') emoji = '👍';
-      if (emoji) {
-        if (!reactionAuthors[emoji])
-          reactionAuthors[emoji] = new Set();
-        reactionAuthors[emoji].add(reaction.pubkey);
+export function reactionsForEvent(event: Event) {
+  return reactionsLoader(event, relays).pipe(
+    map(r => {
+      let emoji: ReactionEmoji;
+      const emojiTags = r.tags.filter((x) => x[0] === 'emoji');
+      if (emojiTags.length === 1) {
+        const [, emojiName, url] = emojiTags[0]!;
+        emoji = {
+          type: 'custom',
+          emoji: emojiName,
+          url
+        }
+      } else {
+        emoji = {
+          type: 'simple',
+          emoji: r.content === '+' || r.content === '' ? '❤️' : r.content
+        }
       }
-    }
-    return { authors: reactionAuthors, emojis: emojiMapping };
-  }));
-  return readonly(reactions);
+      return {
+        emoji,
+        author: r.pubkey
+      }
+    }),
+    scan((acc, event) => {
+      const { emoji, author } = event;
+      const existingIndex = acc.findIndex(item => JSON.stringify(item.emoji) === JSON.stringify(emoji));
+
+      if (existingIndex !== -1) {
+        if (!acc[existingIndex].authors.includes(author))
+          acc[existingIndex].authors.push(author);
+      } else
+        acc.push({ emoji, authors: [author] });
+
+      return acc;
+    }, [] as Array<{ emoji: { type: string; emoji?: string; url?: string; }, authors: string[] }>)
+  )
 }
 
 export function emojiPreferenceEvent(pubkey: string) {

@@ -50,15 +50,18 @@
 >
 	<div class="card-body gap-4 p-4">
 		<div class="flex items-start justify-between">
-			<UserInfo user={event.pubkey} />
+			<div class="flex-1">
+				<UserInfo user={event.pubkey} />
+			</div>
 			<div
-				class="tooltip tooltip-left"
+				class="tooltip tooltip-left shrink"
 				data-tip={dayjs(event.created_at! * 1000).format('YYYY-MM-DD HH:mm:ss')}
 			>
 				<span class="text-base-content/60 text-xs font-medium">
 					{dayjs(event.created_at! * 1000).fromNow()}
 				</span>
 			</div>
+			<a class="btn btn-ghost shrink-0" href="/event/{event.id}">#</a>
 		</div>
 
 		{#if event.kind === 1}

@@ -3,16 +3,19 @@
 	import EmojiPicker, { type EmojiData } from './EmojiPicker.svelte';
 	import PostReaction from './PostReaction.svelte';
 	import type { Event, NostrEvent } from 'nostr-tools';
-	import { createEvent, reactionsLoaderToSvelteReadable } from '$lib';
+	import { createEvent, reactionsForEvent, type ReactionEmoji } from '$lib';
 
 	let { event }: { event: Event } = $props();
 
-	let reactionsData = reactionsLoaderToSvelteReadable(event);
+	let reactions = reactionsForEvent(event);
 
-	const reactions = $derived($reactionsData.authors);
-	const reactionEmoji = $derived($reactionsData.emojis);
+	function isReactionEmoji(emoji: EmojiData | ReactionEmoji | string): emoji is ReactionEmoji {
+		if (typeof emoji === 'string') return false;
+		if (!(emoji as any).type) return false;
+		return emoji.hasOwnProperty('type');
+	}
 
-	async function onEmojiSelected(emoji: EmojiData | string) {
+	async function onEmojiSelected(emoji: EmojiData | ReactionEmoji | string) {
 		if (!nostr.activeUser) {
 			console.warn('No active user to react with');
 			return;
@@ -21,15 +24,18 @@
 			kind: 7,
 			tags: [['e', event.id]]
 		} as NostrEvent;
-		if (typeof emoji !== 'string') {
-			if (emoji.native) return onEmojiSelected(emoji.native);
-			if (emoji.src) {
+
+		if (typeof emoji === 'string') reactionEvent.content = emoji;
+		else if (isReactionEmoji(emoji)) {
+			reactionEvent.content = emoji.emoji;
+			if (emoji.type === 'custom') reactionEvent.tags.push(['emoji', emoji.emoji, emoji.url]);
+		} else {
+			if (emoji.native) reactionEvent.content = emoji.native;
+			else if (emoji.src) {
 				reactionEvent.content = emoji.name;
-				reactionEmoji[emoji.name] = emoji.src;
-				emoji = emoji.name;
-			} else return;
+				reactionEvent.tags.push(['emoji', emoji.name, emoji.src]);
+			}
 		}
-		if (reactionEmoji[emoji]) reactionEvent.tags.push(['emoji', emoji, reactionEmoji[emoji]]);
 		await createEvent(reactionEvent);
 	}
 
@@ -40,11 +46,13 @@
 
 <div class="text-base-content/70 flex flex-wrap items-center gap-3 text-sm">
 	<EmojiPicker onSelected={onEmojiSelected} />
-	{#if Object.keys(reactions).length === 0}
-		<span class="italic opacity-50">No reactions yet</span>
+	{#each $reactions as reaction}
+		<PostReaction
+			emoji={reaction.emoji}
+			authorList={reaction.authors}
+			onCopyReaction={onCopyReaction(reaction.emoji)}
+		/>
 	{:else}
-		{#each Object.entries(reactions) as [emoji, authorList]}
-			<PostReaction {emoji} {authorList} {reactionEmoji} onCopyReaction={onCopyReaction(emoji)} />
-		{/each}
-	{/if}
+		<span class="italic opacity-50">No reactions yet</span>
+	{/each}
 </div>

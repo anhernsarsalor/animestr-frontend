@@ -1,5 +1,3 @@
-import { decode as bolt11Decode } from 'light-bolt11-decoder';
-
 export function unique<T>(arr: T[], fn: (el: T) => unknown) {
   const fnOfArr = arr.map(fn);
   return arr.filter((el, index) => fnOfArr.indexOf(fn(el)) === index);
@@ -16,16 +14,6 @@ export function getColorFromPubkey(pubkey: string): string {
   const brightness = hue >= 32 && hue <= 212 ? 85 : 65;
 
   return `hsl(${hue}, ${saturation}%, ${brightness}%)`;
-}
-
-export function decodeBolt11Amount(bolt11Invoice: string): number {
-  try {
-    const decoded = bolt11Decode(bolt11Invoice);
-    return parseInt(decoded.sections.find((s) => s.name === 'amount')?.value || '0', 10) / 1000; // Convert millisats to sats
-  } catch (error) {
-    console.error('Error decoding bolt11:', error);
-    return 0;
-  }
 }
 
 export function interpolateBetweenThreeValues(value: number, val1: number, val2: number, val3: number) {

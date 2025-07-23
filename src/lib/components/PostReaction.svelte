@@ -1,16 +1,15 @@
 <script lang="ts">
 	import UserInfo from './UserInfo.svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
+	import type { ReactionEmoji } from '$lib';
 
 	let {
 		emoji,
 		authorList,
-		reactionEmoji,
 		onCopyReaction
 	}: {
-		emoji: string;
-		authorList: Set<string>;
-		reactionEmoji: Record<string, string>;
+		emoji: ReactionEmoji;
+		authorList: string[];
 		onCopyReaction?: () => void;
 	} = $props();
 
@@ -43,19 +42,19 @@
 >
 	<button
 		class="bg-base-300 flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 shadow-sm"
-		class:bg-primary={nostr.activeUser && authorList.has(nostr.activeUser)}
+		class:bg-primary={nostr.activeUser && authorList.includes(nostr.activeUser)}
 		onclick={() => onCopyReaction?.()}
 	>
-		{#if reactionEmoji[emoji]}
-			<img src={reactionEmoji[emoji]} alt={emoji} class="h-6 w-6 rounded-full" />
-		{:else}
-			<span class="text-lg font-bold">{emoji}</span>
+		{#if emoji.type === 'simple'}
+			<span class="text-lg font-bold">{emoji.emoji}</span>
+		{:else if emoji.type === 'custom'}
+			<img src={emoji.url} alt={emoji.emoji} class="h-6 w-6 rounded-full" />
 		{/if}
 		<span
 			class="text-base-content/80 text-sm font-medium"
-			class:text-primary-content={nostr.activeUser && authorList.has(nostr.activeUser)}
+			class:text-primary-content={nostr.activeUser && authorList.includes(nostr.activeUser)}
 		>
-			{authorList.size}
+			{authorList.length}
 		</span>
 	</button>
 	{#if tooltipActive}
