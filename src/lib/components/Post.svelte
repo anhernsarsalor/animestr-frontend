@@ -10,7 +10,7 @@
 	import Loading from './Loading.svelte';
 	import PostContentListUpdate from './PostContentListUpdate.svelte';
 	import type { Event } from 'nostr-tools';
-	import { timelineLoaderToSvelteReadable } from '$lib';
+	import { contentEditsLoader } from '$lib';
 
 	const usersWhoPostNSFWWithoutMarks = [
 		// 'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
@@ -25,18 +25,8 @@
 		return allEmoji;
 	});
 
-	let altEvents = timelineLoaderToSvelteReadable({
-		kinds: [1010],
-		authors: [event.pubkey],
-		'#e': [event.id]
-	});
-
-	let contentEdits = $derived(
-		$altEvents
-			.filter((e) => e.tags.some((t) => t[0] === 'alt' && t[1] === 'Content Change Event'))
-			.sort((a, b) => b.created_at! - a.created_at!)
-	);
-	let postContent = $derived(contentEdits.length > 0 ? contentEdits[0].content : event.content);
+	let contentEdit = contentEditsLoader(event);
+	let postContent = $derived($contentEdit ? $contentEdit.content : event.content);
 	let repliesVisible = $state(false);
 	let isSensitiveContent = $state(
 		!!event.tags.find((t) => t[0] === 'sensitive-content') ||
@@ -68,7 +58,7 @@
 			<PostContent
 				originalContent={event.content}
 				content={postContent}
-				isEdited={contentEdits.length > 0}
+				isEdited={$contentEdit !== undefined}
 				isSensitive={isSensitiveContent}
 				emoji={emoji()}
 			/>

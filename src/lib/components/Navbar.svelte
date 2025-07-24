@@ -63,7 +63,7 @@
 	}
 </script>
 
-<div class="navbar bg-base-300 shadow-sm">
+<div class="navbar bg-base-300 fixed z-50 shadow-sm">
 	<NavbarMenu />
 	<div class="navbar-center">
 		<a href="/">

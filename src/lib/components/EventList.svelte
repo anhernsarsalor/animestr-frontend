@@ -3,13 +3,14 @@
 	import { fade } from 'svelte/transition';
 	import Loading from './Loading.svelte';
 	import type { Event } from 'nostr-tools';
+	import type { Observable } from 'rxjs';
 
 	let {
 		events,
 		header = '',
 		emptyMessage = 'No events found'
 	}: {
-		events: Event[];
+		events: Observable<Event[]>;
 		header?: string;
 		emptyMessage?: string;
 	} = $props();
@@ -17,7 +18,7 @@
 	let start = $state(0);
 	let end = $state(20);
 
-	let slice = $derived(events.slice(start, end));
+	let slice = $derived($events.slice(start, end));
 
 	function previous() {
 		start = start - 20;
@@ -43,7 +44,7 @@
 	<h2 class="mb-4 text-xl font-bold">{header}</h2>
 {/if}
 
-{#if events.length === 0}
+{#if $events.length === 0}
 	<div class="flex flex-col justify-center justify-items-center py-8">
 		<Loading inline />
 		{#if emptyMessage}
@@ -58,7 +59,7 @@
 			{:else}
 				<span></span>
 			{/if}
-			{#if events.length > end}
+			{#if $events.length > end}
 				<button class="btn btn-secondary" onclick={next}>Next</button>
 			{/if}
 		</div>
@@ -75,7 +76,7 @@
 			{:else}
 				<span></span>
 			{/if}
-			{#if events.length > end}
+			{#if $events.length > end}
 				<button class="btn btn-secondary" onclick={next}>Next</button>
 			{/if}
 		</div>

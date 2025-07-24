@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { loadUserEmojiPreference } from '$lib';
+	import { loadUserEmojiPreference } from '$lib/emojiPacks';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import data from '@emoji-mart/data';
 	import Icon from '@iconify/svelte';

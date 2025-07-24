@@ -9,6 +9,10 @@
 	import PostContent from './PostContent.svelte';
 	import UserInfo from './UserInfo.svelte';
 	import ContentUrl from './ContentUrl.svelte';
+	import { getTranslation } from '$lib';
+	import { nostr } from '$lib/stores/signerStore.svelte';
+	import Loading from './Loading.svelte';
+	import { bytesToHex } from 'nostr-tools/utils';
 
 	interface Props {
 		content: string;
@@ -22,11 +26,81 @@
 
 	let showOriginal = $state(false);
 	let showSensitive = $state(false);
+	let translating = $state(false);
+	let translated = $state(false);
 
 	let contentToProcess = $derived(showOriginal ? originalContent : content);
 	let processedContent = $derived(contentProcessor.process(contentToProcess, emoji));
+
+	function detectLanguage(text: string) {
+		const japaneseChars = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\uFF65-\uFF9F]/;
+		const latinChars = /[a-zA-Z]/;
+
+		let jpCount = 0;
+		let enCount = 0;
+
+		for (const char of text)
+			if (japaneseChars.test(char)) jpCount++;
+			else if (latinChars.test(char)) enCount++;
+
+		if (jpCount > enCount) return 'jp';
+		return 'en';
+	}
+
+	async function getTranslationOfContent(content: string) {
+		if (translated) {
+			contentToProcess = showOriginal ? originalContent : content;
+			translated = false;
+			return;
+		}
+		const contentSha = bytesToHex(
+			new Uint8Array(
+				await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(content))
+			)
+		);
+		if (localStorage.getItem('translation-' + contentSha)) {
+			translated = true;
+			return (contentToProcess = localStorage.getItem('translation-' + contentSha)!);
+		}
+		if (
+			!confirm(
+				'Are you sure you want to translate this post? The translation will cost you ' +
+					Math.floor(content.length / 100) +
+					' sats'
+			)
+		)
+			return;
+		translating = true;
+		const language = detectLanguage(content);
+		const target = language == 'en' ? 'ja-JP' : 'en-US';
+		try {
+			const translation = await getTranslation(content, target);
+			contentToProcess = translation;
+			localStorage.setItem('translation-' + contentSha, translation)!;
+			translated = true;
+		} catch (e) {
+			alert(
+				'Not enough funds for translation. If you know what to do here is the information you need\nThis will be improved very soon:\n' +
+					JSON.stringify(e, null, 2)
+			);
+		}
+		translating = false;
+	}
 </script>
 
+{#if nostr.activeUser}
+	<button class="btn btn-ghost" onclick={() => getTranslationOfContent(content)}>
+		{#if translated}
+			Show Original ({detectLanguage(content)})
+		{:else}
+			Translate ({detectLanguage(content) == 'en' ? 'jp' : 'en'})
+		{/if}
+	</button>
+{/if}
+
+{#if translating}
+	<Loading inline />
+{/if}
 {#if isSensitive && !showSensitive}
 	<div class="relative">
 		<div class="invisible">
@@ -57,6 +131,17 @@
 	</div>
 {:else}
 	<div class="content">
+		{#if isEdited}
+			<div class="text-base-content/60 mb-4 text-xs font-medium">
+				{showOriginal ? 'Original' : 'Edited'}
+				<button
+					onclick={() => (showOriginal = !showOriginal)}
+					class="text-primary ml-2 hover:underline"
+				>
+					{showOriginal ? 'Show edited' : 'Show original'}
+				</button>
+			</div>
+		{/if}
 		{#each processedContent as segment}
 			{#if segment.type === 'text'}
 				<span>{@html segment.content}</span>
@@ -93,18 +178,6 @@
 			{/if}
 		{/each}
 	</div>
-
-	{#if isEdited}
-		<span class="text-base-content/60 text-xs font-medium">
-			{showOriginal ? 'Original' : 'Edited'}
-			<button
-				onclick={() => (showOriginal = !showOriginal)}
-				class="text-primary ml-2 hover:underline"
-			>
-				{showOriginal ? 'Show edited' : 'Show original'}
-			</button>
-		</span>
-	{/if}
 {/if}
 
 <style>

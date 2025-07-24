@@ -3,9 +3,9 @@ import { createAddressLoader, createEventLoader, createReactionsLoader, createTa
 import { RelayPool } from "applesauce-relay";
 import type { Event, Filter } from "nostr-tools";
 import { openDB, getEventsForFilters, addEvents } from "nostr-idb";
-import { bufferTime, distinctUntilKeyChanged, filter, from, map, mergeMap, scan, take, tap, toArray } from "rxjs";
+import { bufferTime, distinctUntilChanged, distinctUntilKeyChanged, filter, from, map, mergeMap, of, scan, startWith, switchMap, take } from "rxjs";
 import { getZapPayment, getZapSender, isFromCache, type ParsedInvoice } from "applesauce-core/helpers";
-import { readonly, writable } from "svelte/store";
+import { writable } from "svelte/store";
 import { animeScore, normalizeWatchStatus, WatchStatus } from "./utils.svelte";
 import parseAnimeEvent from "./nostr/parseAnimeEvent";
 import type { AnimeData } from "./nostr/types";
@@ -17,7 +17,7 @@ const cache = await openDB();
 export const eventStore = new EventStore();
 
 const pool = new RelayPool();
-const relays = [
+export const relays = [
   "wss://relay.nostr.band",
   "wss://anime.nostr1.com",
   "wss://relay.nostr.wirednet.jp",
@@ -62,71 +62,59 @@ export async function createEvent(template: EventFactoryTemplate, ...operations:
   });
 }
 
-function cacheRequest(filters: Filter[]) {
-  return getEventsForFilters(cache, filters);
-}
+const cacheRequest = (filters: Filter[]) => getEventsForFilters(cache, filters);
 
-const addressLoader = createAddressLoader(pool, {
+export const addressLoader = createAddressLoader(pool, {
   eventStore,
   cacheRequest,
 });
 
-const eventsLoader = createEventLoader(pool, {
+export const eventsLoader = createEventLoader(pool, {
   eventStore,
   cacheRequest,
 });
 
-const zapsLoader = createZapsLoader(pool, {
+export const zapsLoader = createZapsLoader(pool, {
   eventStore,
   cacheRequest,
 });
 
-const reactionsLoader = createReactionsLoader(pool, {
+export const reactionsLoader = createReactionsLoader(pool, {
   eventStore,
   cacheRequest
 });
-const iTagLoader = createTagValueLoader(pool, "i", {
+export const iTagLoader = createTagValueLoader(pool, "i", {
   cacheRequest,
   eventStore
 });
 
-export function loadAllAnimeEvents() {
-  const events = writable<AnimeData[]>([]);
-  createTimelineLoader(pool, relays, [{
-    kinds: [30010],
-    '#t': ['animestr'],
-  }], {
-    cache: cacheRequest,
-    eventStore
-  })(0).pipe(
-    map(parseAnimeEvent),
-    filter(e => e !== null)
-  ).subscribe(event => events.update((prev: AnimeData[]) => [...prev, event]));
-  return readonly(events);
-}
+export const allAnimeEvents = createTimelineLoader(pool, relays, [{
+  kinds: [30010],
+  '#t': ['animestr'],
+}], {
+  cache: cacheRequest,
+  eventStore
+})(0).pipe(
+  map(parseAnimeEvent),
+  filter(e => e !== null),
+);
 
 export function animeLoaderWithFilter(filterString: string, limit: number = 10) {
-  const events = writable<AnimeData[]>([]);
-  eventStore.filters({
-    kinds: [30010],
-    '#t': ['animestr'],
-  }).pipe(
-    filter((event: Event) => event.tags.some(t => (t[0] === 'title' || t[0] === "alt-title" || t[0] === 'i') && t[1].toLowerCase().includes(filterString.toLowerCase()))),
-    map(parseAnimeEvent),
-    filter(event => event !== null),
+  const lowerFilter = filterString.toLowerCase();
+  return allAnimeEvents.pipe(
+    filter(a => a.title.toLowerCase().includes(lowerFilter) || a.altTitles.some(t => t.toLowerCase().includes(lowerFilter)) || a.identifiers.some(x => x.value.includes(lowerFilter))),
     take(limit),
-  ).subscribe(event => events.update((prev: AnimeData[]) => [...prev, event]))
-  return readonly(events);
+    scan((events, event) => [...events, event], [] as AnimeData[])
+  );
 }
 
-export function timelineLoaderToSvelteReadable(...filters: Filter[]) {
-  const events = writable<Event[]>([]);
-  createTimelineLoader(pool, relays, filters, {
-    cache: cacheRequest,
-    eventStore,
-  })().subscribe(event => events.update((prev: Event[]) => [...prev, event].toSorted((a, b) => b.created_at - a.created_at)));
-  return readonly(events);
-}
+export const timelineLoader = (...filters: Filter[]) => createTimelineLoader(pool, relays, filters, {
+  cache: cacheRequest,
+  eventStore,
+})().pipe(
+  scan((events, event) => [...events, event].toSorted((a, b) => b.created_at - a.created_at), [] as Event[]),
+  startWith([])
+)
 
 export function profileLoader(userPub: string) {
   return addressLoader({
@@ -159,21 +147,19 @@ export interface ParsedZapEvent {
   amount: number;
 }
 
-export function zapsForEvent(event: Event) {
-  return zapsLoader(event, relays).pipe(
-    map(z => ({
-      payment: getZapPayment(z),
-      sender: getZapSender(z),
-    })),
-    map(z => ({
-      ...z,
-      message: z.payment?.description,
-      amount: z.payment?.amount ? Math.round(z.payment.amount / 1000) : 0
-    } as ParsedZapEvent)),
-    scan((zaps: ParsedZapEvent[], zap: ParsedZapEvent) => [...zaps, zap], []),
-    map(zaps => zaps.sort((a, b) => b.amount - a.amount))
-  );
-}
+export const zapsForEvent = (event: Event) => zapsLoader(event, relays).pipe(
+  map(z => ({
+    payment: getZapPayment(z),
+    sender: getZapSender(z),
+  })),
+  map(z => ({
+    ...z,
+    message: z.payment?.description,
+    amount: z.payment?.amount ? Math.round(z.payment.amount / 1000) : 0
+  } as ParsedZapEvent)),
+  scan((zaps: ParsedZapEvent[], zap: ParsedZapEvent) => [...zaps, zap], []),
+  map(zaps => zaps.sort((a, b) => b.amount - a.amount))
+);
 
 export interface AnimeEntry {
   identifier: string;
@@ -193,8 +179,7 @@ export function normalizeProgress(progress?: string | number) {
   return progressNumber;
 }
 
-export function watchListLoader(userPub: string) {
-  const anime = writable<AnimeEntry[]>([]);
+export const watchListLoader = (userPub: string) =>
   addressLoader({
     kind: 31111,
     identifier: 'anime-list',
@@ -222,135 +207,122 @@ export function watchListLoader(userPub: string) {
       ))
     )),
     filter(x => x.anime !== null),
-    distinctUntilKeyChanged('identifier'),
-  ).subscribe((e: AnimeEntry) => anime.update(prev => {
-    if (!prev.some(existing => existing.identifier === e.identifier)) {
-      return [...prev, e].toSorted((a, b) => {
-        if (a.status !== b.status) return a.status - b.status;
-        if (a.score !== b.score) return b.score.value - a.score.value;
-        return b.identifier.localeCompare(a.identifier);
-      });
-    }
-    return prev;
-  }));
-  return (anime);
-}
+    distinctUntilChanged((a: AnimeEntry, b: AnimeEntry) => a.identifier === b.identifier),
+    scan((acc, curr) => [...acc, curr], [] as AnimeEntry[]),
+    map(entries => entries.toSorted((a, b) => {
+      if (a.status !== b.status) return a.status - b.status;
+      if (a.score !== b.score) return b.score.value - a.score.value;
+      return b.identifier.localeCompare(a.identifier);
+    })),
+    startWith([] as AnimeEntry[])
+  );
 
 export type ReactionEmoji = { type: 'simple', emoji: string } | { type: 'custom', emoji: string; url: string };
 
-export function reactionsForEvent(event: Event) {
-  return reactionsLoader(event, relays).pipe(
-    map(r => {
-      let emoji: ReactionEmoji;
-      const emojiTags = r.tags.filter((x) => x[0] === 'emoji');
-      if (emojiTags.length === 1) {
-        const [, emojiName, url] = emojiTags[0]!;
-        emoji = {
-          type: 'custom',
-          emoji: emojiName,
-          url
-        }
-      } else {
-        emoji = {
-          type: 'simple',
-          emoji: r.content === '+' || r.content === '' ? '❤️' : r.content
-        }
+export const reactionsForEvent = (event: Event) => reactionsLoader(event, relays).pipe(
+  map(r => {
+    let emoji: ReactionEmoji;
+    const emojiTags = r.tags.filter((x) => x[0] === 'emoji');
+    if (emojiTags.length === 1) {
+      const [, emojiName, url] = emojiTags[0]!;
+      emoji = {
+        type: 'custom',
+        emoji: emojiName,
+        url
       }
-      return {
-        emoji,
-        author: r.pubkey
+    } else {
+      emoji = {
+        type: 'simple',
+        emoji: r.content === '+' || r.content === '' ? '❤️' : r.content
       }
-    }),
-    scan((acc, event) => {
-      const { emoji, author } = event;
-      const existingIndex = acc.findIndex(item => JSON.stringify(item.emoji) === JSON.stringify(emoji));
-
-      if (existingIndex !== -1) {
-        if (!acc[existingIndex].authors.includes(author))
-          acc[existingIndex].authors.push(author);
-      } else
-        acc.push({ emoji, authors: [author] });
-
-      return acc;
-    }, [] as Array<{ emoji: { type: string; emoji?: string; url?: string; }, authors: string[] }>)
-  )
-}
-
-export function emojiPreferenceEvent(pubkey: string) {
-  return addressLoader({
-    kind: 10030,
-    pubkey,
-    relays
-  });
-}
-
-export function loadUserEmojiPreference(pubkey: string) {
-  const emoji = writable<[string, string][]>([]);
-
-  emojiPreferenceEvent(pubkey).subscribe((event) => {
-    const emojiTags = event.tags.filter(x => x[0] === 'emoji');
-    emojiTags.forEach(tag => emoji.update((prev) => [...prev, [
-      tag[1], tag[2]
-    ]]))
-    const emojiPacks = event.tags.filter(x => x[0] === 'a' && x[1].startsWith(`30030:`)).map(x => x[1].split(':').splice(1));
-    if (emojiPacks.length > 0) {
-      from(emojiPacks).pipe(
-        mergeMap(s => addressLoader({
-          kind: 30030,
-          identifier: s[1],
-          pubkey: s[0],
-          relays
-        }))
-      ).subscribe(event => {
-        const emojiTags = event.tags.filter(x => x[0] === 'emoji');
-        emojiTags.forEach(tag => emoji.update((prev) => [...prev, [
-          tag[1], tag[2]
-        ]]))
-      })
     }
-  });
-
-  return readonly(emoji);
-}
-
-export function loadUserEmojiPacks(pubkey: string) {
-  const packs = writable<string[][]>([]);
-
-  emojiPreferenceEvent(pubkey).subscribe((event) => {
-    const emojiPacks = event.tags.filter(x => x[0] === 'a' && x[1].startsWith(`30030:`)).map(x => x[1].split(':').slice(1));
-    packs.update(_ => emojiPacks);
-  });
-
-  return readonly(packs);
-}
-
-export interface EmojiPack {
-  identifier: string;
-  author: string;
-  title: string;
-  emoji: string[][];
-}
-
-export function emojiPacksSvelteReadable() {
-  const packs = writable<EmojiPack[]>([]);
-  createTimelineLoader(pool, relays, {
-    kinds: [30030]
-  }, {
-    cache: cacheRequest,
-    eventStore,
-  })().subscribe(event => {
-    const identifier = event.tags.find(t => t[0] === 'd')?.[1];
-    if (!identifier) return;
-    const title = event.tags.find(t => t[0] === 'title')?.[1] || identifier;
-    const emoji = event.tags.filter(t => t[0] === 'emoji').map(t => t.slice(1));
-    const pack = {
-      identifier,
-      title,
-      author: event.pubkey,
+    return {
       emoji,
+      author: r.pubkey
+    }
+  }),
+  scan((acc, event) => {
+    const { emoji, author } = event;
+    const existingIndex = acc.findIndex(item => JSON.stringify(item.emoji) === JSON.stringify(emoji));
+
+    if (existingIndex !== -1) {
+      if (!acc[existingIndex].authors.includes(author))
+        acc[existingIndex].authors.push(author);
+    } else
+      acc.push({ emoji, authors: [author] });
+
+    return acc;
+  }, [] as Array<{ emoji: { type: string; emoji?: string; url?: string; }, authors: string[] }>)
+)
+
+export const contentEditsLoader = (event: Event) => createTimelineLoader(pool, relays, {
+  kinds: [1010],
+  authors: [event.pubkey],
+  '#e': [event.id]
+})().pipe(
+  filter((e) => e.tags.some((t) => t[0] === 'alt' && t[1] === 'Content Change Event')),
+  scan((events, event) => [...events, event].toSorted((a, b) => b.created_at - a.created_at), [] as Event[]),
+  map(events => events[0])
+)
+
+let translationApiKey = (() => {
+  let translationApiKey = '';
+  return async () => {
+    if (translationApiKey) return translationApiKey;
+    const eventData = {
+      "content": "Auth to get Jumble translation service account",
+      "kind": 27235,
+      "created_at": Math.floor(Date.now() / 1000),
+      "tags": [
+        [
+          "u",
+          "https://api.jumble.social/v1/translation/account"
+        ],
+        [
+          "method",
+          "get"
+        ]
+      ]
     };
-    packs.update((prev: EmojiPack[]) => [...prev, pack])
-  })
-  // events.update((prev: Event[]) => [...prev, event].toSorted((a, b) => b.created_at - a.created_at)));
-  return readonly(packs);
+    const note = await eventFactory.build(eventData)
+    const signed = await eventFactory.sign(note);
+    const keyRequest = await fetch("https://api.jumble.social/v1/translation/account", {
+      headers: {
+        Authorization: `Nostr ${btoa(JSON.stringify(signed))}`
+      }
+    })
+    const keyResponse = await keyRequest.json();
+    translationApiKey = keyResponse.api_key;
+    return translationApiKey;
+  }
+})();
+
+export async function getTranslation(content: string, target: string) {
+  const key = await translationApiKey();
+  const req = await fetch('https://api.jumble.social/v1/translation/translate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      q: content,
+      target,
+      api_key: key
+    })
+  });
+  const resp = await req.json();
+  if (resp.code === "01002") {
+    const tx = await fetch('https://api.jumble.social/v1/transactions', {
+      body: JSON.stringify({
+        "pubkey": "f7a0388ce16e7955a104572c9222ed8d7b61fa047844d1f7bada67f6f561ea8b",
+        "purpose": "translation",
+        "amount": Math.floor(Math.max(1000, content.length / 100))
+      })
+    })
+    throw {
+      message: "Not enough funds",
+      tx
+    };
+  }
+  return resp.translatedText;
 }

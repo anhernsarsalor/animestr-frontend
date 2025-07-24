@@ -1,17 +1,17 @@
 <script lang="ts">
+	import { createEvent } from '$lib';
 	import {
-		createEvent,
-		emojiPacksSvelteReadable,
+		emojiPacks,
 		emojiPreferenceEvent,
 		loadUserEmojiPacks,
 		type EmojiPack
-	} from '$lib';
+	} from '$lib/emojiPacks';
 	import Loading from '$lib/components/Loading.svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import type { EventTemplate } from 'nostr-tools';
+	import { map } from 'rxjs';
 	import { readable } from 'svelte/store';
 
-	const allEmojiPacks = emojiPacksSvelteReadable();
 	let userEmojiPreferenceEvent = $derived(
 		nostr.activeUser ? emojiPreferenceEvent(nostr.activeUser) : readable(null)
 	);
@@ -28,15 +28,19 @@
 
 	let filteredEmojiPacks = $derived(
 		filter === ''
-			? $allEmojiPacks
-			: $allEmojiPacks.filter(
-					(p) =>
-						p.author.toLowerCase() === filter.toLowerCase() ||
-						p.title.toLowerCase().includes(filter.toLowerCase()) ||
-						p.emoji.some((e) => e[0].toLowerCase().includes(filter.toLowerCase()))
+			? emojiPacks
+			: emojiPacks.pipe(
+					map((ps) =>
+						ps.filter(
+							(p) =>
+								p.author.toLowerCase() === filter.toLowerCase() ||
+								p.title.toLowerCase().includes(filter.toLowerCase()) ||
+								p.emoji.some((e) => e[0].toLowerCase().includes(filter.toLowerCase()))
+						)
+					)
 				)
 	);
-	let itemsInPage = $derived(filteredEmojiPacks.slice(page * 10, (page + 1) * 10));
+	let itemsInPage = $derived($filteredEmojiPacks.slice(page * 10, (page + 1) * 10));
 
 	function reloadUserEmojiPacks() {
 		userEmojiPreferenceEvent = emojiPreferenceEvent(nostr.activeUser!);
@@ -100,7 +104,7 @@
 	{:else}
 		<span></span>
 	{/if}
-	{#if (page + 1) * 10 < filteredEmojiPacks.length}
+	{#if (page + 1) * 10 < $filteredEmojiPacks.length}
 		<button class="btn btn-secondary" onclick={() => (page = page + 1)}>Next</button>
 	{/if}
 </div>
@@ -155,7 +159,7 @@
 	{:else}
 		<span></span>
 	{/if}
-	{#if (page + 1) * 10 < filteredEmojiPacks.length}
+	{#if (page + 1) * 10 < $filteredEmojiPacks.length}
 		<button class="btn btn-secondary" onclick={() => (page = page + 1)}>Next</button>
 	{/if}
 </div>

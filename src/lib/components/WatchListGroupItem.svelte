@@ -5,13 +5,11 @@
 
 	let {
 		anime,
-		group,
 		editProgress,
 		editStatus,
 		editScore
 	}: {
 		anime: AnimeEntry;
-		group: WatchStatus;
 		editProgress: () => void;
 		editStatus: () => void;
 		editScore: () => void;
@@ -26,7 +24,7 @@
 		<a href="/anime/{anime.identifier}" class="title">
 			{anime.anime?.title}
 		</a>
-		{#if watchStatusToName(group) !== watchStatusToName(WatchStatus.Completed)}
+		{#if watchStatusToName(anime.status) !== watchStatusToName(WatchStatus.Completed)}
 			<button class="anime-progress btn btn-ghost" onclick={editProgress}>
 				{anime.progress}/{anime.anime?.episodes}
 			</button>
@@ -34,7 +32,7 @@
 			<span></span>
 		{/if}
 		<button class="anime-status btn btn-ghost" onclick={editStatus}>
-			{watchStatusToName(group)}
+			{watchStatusToName(anime.status)}
 		</button>
 		<button style:color={anime.score.color} class="btn score btn-ghost" onclick={editScore}>
 			{anime.score.toString()}

@@ -2,18 +2,16 @@
 	import EventList from '$lib/components/EventList.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
 	import { page } from '$app/state';
-	import { timelineLoaderToSvelteReadable } from '$lib';
+	import { timelineLoader } from '$lib';
 
 	const { hashtag } = $derived(page.params);
 
 	const events = $derived(
-		timelineLoaderToSvelteReadable({
+		timelineLoader({
 			kinds: [1],
 			'#t': [hashtag.toLowerCase()]
-		})
+		}).pipe(filterNoReplies)
 	);
-
-	let filteredEvents = $derived($events.filter(filterNoReplies));
 </script>
 
 <svelte:head>
@@ -59,7 +57,7 @@
 	<div class="space-y-4">
 		{#key hashtag}
 			<EventList
-				events={filteredEvents}
+				{events}
 				header={`Posts tagged with #${hashtag}`}
 				emptyMessage={`There are no posts with the hashtag #${hashtag}.`}
 			/>

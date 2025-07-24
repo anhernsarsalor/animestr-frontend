@@ -106,16 +106,16 @@ export enum WatchStatus {
 };
 
 export function watchStatusToName(ws?: WatchStatus | string | number): string {
-  if (!ws) return 'unknown';
+  if (typeof ws === "undefined" || ws === null) return 'unknown';
 
   ws = normalizeWatchStatus(ws);
 
   switch (ws) {
-    case WatchStatus.Watching: return 'watching';
-    case WatchStatus.Completed: return 'completed';
-    case WatchStatus.OnHold: return 'on-hold';
-    case WatchStatus.Dropped: return 'dropped';
-    case WatchStatus.Planned: return 'planned';
+    case WatchStatus.Watching: return 'Watching';
+    case WatchStatus.Completed: return 'Completed';
+    case WatchStatus.OnHold: return 'On-Hold';
+    case WatchStatus.Dropped: return 'Dropped';
+    case WatchStatus.Planned: return 'Planned';
     default: return 'unknown';
   }
 }

@@ -4,7 +4,7 @@
 	import Loading from '$lib/components/Loading.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
-	import { profileLoader, timelineLoaderToSvelteReadable } from '$lib';
+	import { profileLoader, timelineLoader } from '$lib';
 	import { getDisplayName, getProfileContent, normalizeToPubkey } from 'applesauce-core/helpers';
 	import WatchList from '$lib/components/WatchList.svelte';
 	import { npubEncode } from 'nostr-tools/nip19';
@@ -19,14 +19,12 @@
 
 	let selectedTab = $state('notes');
 
-	let events = $derived(
-		timelineLoaderToSvelteReadable({
+	const events = $derived(
+		timelineLoader({
 			kinds: [1, 31111],
 			authors: [pubkey]
-		})
+		}).pipe(filterNoReplies)
 	);
-
-	let filteredEvents = $derived($events.filter(filterNoReplies));
 </script>
 
 <svelte:head>
@@ -78,10 +76,7 @@
 				bind:group={selectedTab}
 			/>
 			<div class="tab-content bg-base-100 border-base-300 p-6">
-				<EventList
-					events={filteredEvents}
-					emptyMessage="This user hasn't published any notes yet."
-				/>
+				<EventList {events} emptyMessage="This user hasn't published any notes yet." />
 			</div>
 
 			<input

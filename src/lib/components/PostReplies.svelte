@@ -4,17 +4,15 @@
 	import { scale } from 'svelte/transition';
 	import NewPostEditor from './NewPostEditor.svelte';
 	import type { Event } from 'nostr-tools';
-	import { timelineLoaderToSvelteReadable } from '$lib';
+	import { timelineLoader } from '$lib';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 
 	let { parent }: { parent: Event } = $props();
 
-	let replies = timelineLoaderToSvelteReadable({
+	const replies = timelineLoader({
 		kinds: [1],
 		'#e': [parent.id]
-	});
-
-	let filteredReplies = $derived($replies.filter(filterOnlyDirectReplies(parent)));
+	}).pipe(filterOnlyDirectReplies(parent));
 </script>
 
 <div
@@ -24,7 +22,7 @@
 	{#if nostr.activeUser}
 		<NewPostEditor replyTo={parent} />
 	{/if}
-	{#each filteredReplies as reply}
+	{#each $replies as reply}
 		<Post event={reply} />
 	{:else}
 		No replies yet!

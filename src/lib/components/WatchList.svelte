@@ -5,8 +5,9 @@
 	import Icon from '@iconify/svelte';
 	import AnimeSearchResults from './AnimeSearchResults.svelte';
 	import { animeScore, WatchStatus } from '$lib/utils.svelte';
-	import { from, groupBy, toArray, map, mergeMap, Observable } from 'rxjs';
+	import { from, groupBy, toArray, map, mergeMap, reduce, startWith, tap } from 'rxjs';
 	import WatchListGroup from './WatchListGroup.svelte';
+	import Loading from './Loading.svelte';
 
 	let { pubkey }: { pubkey: string } = $props();
 
@@ -14,22 +15,11 @@
 
 	const groupedWatchList = $derived(
 		from($watchList).pipe(
-			groupBy((anime: AnimeEntry) => anime.status),
-			mergeMap((group) =>
-				group.pipe(
-					toArray(),
-					map((array) => [group.key, array])
-				)
-			),
-			toArray(),
-			map((pairs) =>
-				pairs.reduce((acc, [k, v]) => {
-					acc[k] = v;
-					return acc;
-				}, {})
-			)
+			groupBy((anime) => anime.status),
+			mergeMap((group) => group.pipe(toArray())),
+			toArray()
 		)
-	) as unknown as Observable<{ [w: WatchStatus]: AnimeEntry[] }>;
+	);
 
 	async function saveList() {
 		if (pubkey !== nostr.activeUser) return;
@@ -263,8 +253,12 @@
 	</button>
 {/if}
 
-{#each Object.entries($groupedWatchList) as group}
-	<WatchListGroup group={group[0]} anime={group[1]} {editScore} {editStatus} {editProgress} />
+{#if $groupedWatchList}
+	{#each $groupedWatchList as animeList}
+		<WatchListGroup anime={animeList} {editScore} {editStatus} {editProgress} />
+	{:else}
+		<p>The list is either loading, or this user doesn't have any anime on their list :(</p>
+	{/each}
 {:else}
-	<p>The list is either loading, or this user doesn't have any anime on their list :(</p>
-{/each}
+	<Loading inline />
+{/if}
