@@ -65,7 +65,7 @@
 		if (
 			!confirm(
 				'Are you sure you want to translate this post? The translation will cost you ' +
-					Math.min(1, Math.floor(content.length / 100)) +
+					Math.max(1, Math.floor(content.length / 100)) +
 					' sats'
 			)
 		)
