@@ -10,10 +10,16 @@
 	let animeData = animeEventLoader(page.params.id);
 
 	let isLoading = $derived(!animeData);
+
+	let title = $derived($animeData?.title || 'Loading Anime...');
 </script>
 
 <svelte:head>
-	<title>{animeData ? $animeData?.title : 'Loading Anime...'}</title>
+	<title>{title} | Animestr</title>
+	<meta property="og:title" content="{title} | Animestr" />
+	<meta property="og:image" content={$animeData?.image} />
+	<meta name="twitter:title" content="{title} | Animestr" />
+	<meta name="twitter:image" content={$animeData?.image} />
 </svelte:head>
 
 <main class="bg-base-200 min-h-screen py-8">

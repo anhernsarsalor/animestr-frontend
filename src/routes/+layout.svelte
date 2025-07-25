@@ -23,6 +23,16 @@
 
 <svelte:head>
 	<title>Animestr</title>
+	<meta name="description" content="The decentralized anime focused platform" />
+	<meta property="og:url" content="https://animestr.vercel.app" />
+	<meta property="og:type" content="website" />
+	<meta property="og:title" content="Animestr" />
+	<meta property="og:description" content="The decentralized anime focused platform" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta property="twitter:domain" content="animestr.vercel.app" />
+	<meta property="twitter:url" content="https://animestr.vercel.app" />
+	<meta name="twitter:title" content="Animestr" />
+	<meta name="twitter:description" content="The decentralized anime focused platform" />
 </svelte:head>
 
 {#if loading}

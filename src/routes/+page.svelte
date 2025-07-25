@@ -22,6 +22,12 @@
 	).pipe(filterNoReplies);
 </script>
 
+<svelte:head>
+	<title>Home | Animestr</title>
+	<meta property="og:title" content="Home | Animestr" />
+	<meta name="twitter:title" content="Home | Animestr" />
+</svelte:head>
+
 {#if nostr.activeUser}
 	<NewPostEditor />
 {/if}

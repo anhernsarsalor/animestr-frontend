@@ -29,6 +29,10 @@
 
 <svelte:head>
 	<title>{username}'s Profile | Animestr</title>
+	<meta property="og:title" content="{username}'s Profile | Animestr" />
+	<meta property="og:image" content={profile?.banner} />
+	<meta name="twitter:title" content="{username}'s Profile | Animestr" />
+	<meta name="twitter:image" content={profile?.banner} />
 </svelte:head>
 
 {#if isLoading}

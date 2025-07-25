@@ -16,6 +16,8 @@
 
 <svelte:head>
 	<title>#{hashtag || ''} | Animestr</title>
+	<meta property="og:title" content="#{hashtag} | Animestr" />
+	<meta name="twitter:title" content="#{hashtag} | Animestr" />
 </svelte:head>
 
 <div class="container mx-auto max-w-3xl p-4">
