@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { normalizeProgress } from '$lib';
+	import { normalizeProgress } from '$lib/anime';
 	import { watchStatusToName } from '$lib/utils.svelte';
 	import AnimeReference from './AnimeReference.svelte';
 	import type { Event } from 'nostr-tools';

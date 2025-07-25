@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { AnimeData } from '$lib/nostr/types';
+	import type { AnimeData } from '$lib/anime';
 
 	let { anime }: { anime: AnimeData } = $props();
 </script>

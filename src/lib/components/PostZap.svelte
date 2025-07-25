@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ParsedZapEvent } from '$lib';
+	import type { ParsedZapEvent } from '$lib/zaps';
 	import UserInfo from './UserInfo.svelte';
 
 	let { zap }: { zap: ParsedZapEvent } = $props();

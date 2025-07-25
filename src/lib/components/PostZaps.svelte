@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Event } from 'nostr-tools';
-	import { zapsForEvent } from '$lib';
+	import { zapsForEvent } from '$lib/zaps';
 	import PostZap from './PostZap.svelte';
 
 	let { event }: { event: Event } = $props();

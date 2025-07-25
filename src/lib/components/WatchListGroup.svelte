@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { AnimeEntry } from '$lib';
+	import type { AnimeEntry } from '$lib/anime';
 	import { watchStatusToName } from '$lib/utils.svelte';
 	import WatchListGroupItem from './WatchListGroupItem.svelte';
 

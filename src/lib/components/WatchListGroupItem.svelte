@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { AnimeEntry } from '$lib';
+	import type { AnimeEntry } from '$lib/anime';
 	import { watchStatusToName, WatchStatus } from '$lib/utils.svelte';
 	import { fade } from 'svelte/transition';
 

@@ -9,7 +9,7 @@
 	import PostContent from './PostContent.svelte';
 	import UserInfo from './UserInfo.svelte';
 	import ContentUrl from './ContentUrl.svelte';
-	import { getTranslation } from '$lib';
+	import { getTranslation } from '$lib/translation';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import Loading from './Loading.svelte';
 	import { bytesToHex } from 'nostr-tools/utils';

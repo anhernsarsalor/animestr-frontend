@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { animeLoaderWithFilter } from '$lib';
-	import type { AnimeData } from '$lib/nostr/types';
+	import { animeLoaderWithFilter, type AnimeData } from '$lib/anime';
 	import { readable } from 'svelte/store';
 	import AnimeBasicInfo from './AnimeBasicInfo.svelte';
 

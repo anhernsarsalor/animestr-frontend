@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Loading from './Loading.svelte';
 	import Icon from '@iconify/svelte';
-	import { animeEventLoader } from '$lib';
+	import { animeEventLoader } from '$lib/anime';
 
 	let { animeId, source, score = null, progress = null, status = null } = $props();
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import UserInfo from './UserInfo.svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
-	import type { ReactionEmoji } from '$lib';
+	import type { ReactionEmoji } from '$lib/reactions';
 
 	let {
 		emoji,

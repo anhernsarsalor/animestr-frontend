@@ -1,6 +1,6 @@
 import type { Event } from "nostr-tools";
 import { from, map, mergeMap, of, scan, startWith, switchMap } from "rxjs";
-import { addressLoader, relays, timelineLoader, type AnimeEntry } from "$lib";
+import { addressLoader, relays, timelineLoader } from "$lib";
 
 export const emojiPreferenceEvent = (pubkey: string) => addressLoader({
   kind: 10030,
@@ -36,7 +36,7 @@ export const loadUserEmojiPreference = (pubkey: string) => emojiPreferenceEvent(
       : of(directEmojis)
   ),
   map(emojis => [...new Map(emojis.map(e => [e[0], e])).values()]),
-  startWith([] as AnimeEntry[])
+  startWith([])
 );
 
 export const loadUserEmojiPacks = (pubkey: string) => emojiPreferenceEvent(pubkey).pipe(

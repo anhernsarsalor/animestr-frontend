@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { createEvent, watchListLoader, type AnimeEntry } from '$lib';
-	import type { AnimeData } from '$lib/nostr/types';
+	import { createEvent } from '$lib';
+	import { watchListLoader, type AnimeData, type AnimeEntry } from '$lib/anime';
 	import { initSigner, nostr } from '$lib/stores/signerStore.svelte';
 	import Icon from '@iconify/svelte';
 	import AnimeSearchResults from './AnimeSearchResults.svelte';
 	import { animeScore, WatchStatus } from '$lib/utils.svelte';
-	import { from, groupBy, toArray, map, mergeMap, reduce, startWith, tap } from 'rxjs';
+	import { from, groupBy, toArray, mergeMap } from 'rxjs';
 	import WatchListGroup from './WatchListGroup.svelte';
 	import Loading from './Loading.svelte';
 

@@ -10,7 +10,7 @@
 	import { goto } from '$app/navigation';
 	import Loading from './Loading.svelte';
 	import AnimeSearchResults from './AnimeSearchResults.svelte';
-	import type { AnimeData } from '$lib/nostr/types';
+	import type { AnimeData } from '$lib/anime';
 
 	let search = $state('');
 	let searchDialog: HTMLDialogElement | null = null;

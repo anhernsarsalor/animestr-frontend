@@ -3,7 +3,8 @@
 	import EmojiPicker, { type EmojiData } from './EmojiPicker.svelte';
 	import PostReaction from './PostReaction.svelte';
 	import type { Event, NostrEvent } from 'nostr-tools';
-	import { createEvent, reactionsForEvent, type ReactionEmoji } from '$lib';
+	import { createEvent } from '$lib';
+	import { reactionsForEvent, type ReactionEmoji } from '$lib/reactions';
 
 	let { event }: { event: Event } = $props();
 
