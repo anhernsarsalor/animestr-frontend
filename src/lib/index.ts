@@ -1,16 +1,23 @@
-import { EventStore } from "applesauce-core";
+import { EventStore, mapEventsToStore } from "applesauce-core";
 import { createAddressLoader, createEventLoader, createReactionsLoader, createTagValueLoader, createTimelineLoader, createZapsLoader } from "applesauce-loaders/loaders";
-import { RelayPool } from "applesauce-relay";
+import { onlyEvents, RelayPool } from "applesauce-relay";
 import type { Event, Filter } from "nostr-tools";
 import { openDB, getEventsForFilters, addEvents } from "nostr-idb";
-import { bufferTime, distinctUntilChanged, distinctUntilKeyChanged, filter, from, map, mergeMap, of, scan, startWith, switchMap, take } from "rxjs";
+import { bufferTime, distinctUntilChanged, distinctUntilKeyChanged, filter, from, map, merge, mergeMap, Observable, of, scan, startWith, take } from "rxjs";
 import { getZapPayment, getZapSender, isFromCache, type ParsedInvoice } from "applesauce-core/helpers";
-import { writable } from "svelte/store";
 import { animeScore, normalizeWatchStatus, WatchStatus } from "./utils.svelte";
 import parseAnimeEvent from "./nostr/parseAnimeEvent";
 import type { AnimeData } from "./nostr/types";
 import { EventFactory, type EventFactoryTemplate, type EventOperation } from "applesauce-factory";
 import { ExtensionSigner } from "applesauce-signers";
+import { makeCacheRequest, wrapUpstreamPool } from "applesauce-loaders/helpers";
+
+function keepAliveRequest(relays: string[], filters: Filter[]) {
+  return pool.group(relays).subscription(filters).pipe(
+    onlyEvents(),
+    mapEventsToStore(eventStore)
+  )
+}
 
 const cache = await openDB();
 
@@ -108,7 +115,9 @@ export function animeLoaderWithFilter(filterString: string, limit: number = 10) 
   );
 }
 
-export const timelineLoader = (...filters: Filter[]) => createTimelineLoader(pool, relays, filters, {
+export const timelineLoader = (...filters: Filter[]) => createTimelineLoader({
+  request: keepAliveRequest
+}, relays, filters, {
   cache: cacheRequest,
   eventStore,
 })().pipe(
@@ -255,7 +264,9 @@ export const reactionsForEvent = (event: Event) => reactionsLoader(event, relays
   }, [] as Array<{ emoji: { type: string; emoji?: string; url?: string; }, authors: string[] }>)
 )
 
-export const contentEditsLoader = (event: Event) => createTimelineLoader(pool, relays, {
+export const contentEditsLoader = (event: Event) => createTimelineLoader({
+  request: keepAliveRequest,
+}, relays, {
   kinds: [1010],
   authors: [event.pubkey],
   '#e': [event.id]
