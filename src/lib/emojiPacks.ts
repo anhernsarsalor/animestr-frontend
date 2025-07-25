@@ -41,7 +41,8 @@ export const loadUserEmojiPreference = (pubkey: string) => emojiPreferenceEvent(
 
 export const loadUserEmojiPacks = (pubkey: string) => emojiPreferenceEvent(pubkey).pipe(
   map(e => e.tags.filter(x => x[0] === 'a' && x[1].startsWith(`30030:`))),
-  map(t => t.map(x => x[1].split(':').slice(1)))
+  map(t => t.map(x => x[1].split(':').slice(1))),
+  startWith([])
 );
 
 export interface EmojiPack {
