@@ -1,9 +1,11 @@
-import { cacheRequest, eventStore, pool, relays } from "$lib";
+import { cacheRequest, eventStore, keepAliveRequest, pool, relays } from "$lib";
 import { createReactionsLoader } from "applesauce-loaders/loaders";
 import { map, scan } from "rxjs";
 import { type Event } from "nostr-tools";
 
-const reactionsLoader = createReactionsLoader(pool, {
+const reactionsLoader = createReactionsLoader({
+  request: keepAliveRequest
+}, {
   eventStore,
   cacheRequest
 });

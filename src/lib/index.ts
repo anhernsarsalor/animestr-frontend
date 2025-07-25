@@ -8,7 +8,7 @@ import { isFromCache } from "applesauce-core/helpers";
 import { EventFactory, type EventFactoryTemplate, type EventOperation } from "applesauce-factory";
 import { ExtensionSigner } from "applesauce-signers";
 
-function keepAliveRequest(relays: string[], filters: Filter[]) {
+export function keepAliveRequest(relays: string[], filters: Filter[]) {
   return pool.group(relays).subscription(filters).pipe(
     onlyEvents(),
     mapEventsToStore(eventStore)
