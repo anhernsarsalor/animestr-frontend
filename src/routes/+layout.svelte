@@ -8,7 +8,7 @@
 
 	import Loading from '$lib/components/Loading.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
-	import { allAnimeEvents } from '$lib';
+	import { allAnimeEvents } from '$lib/anime';
 	import { initSigner } from '$lib/stores/signerStore.svelte';
 
 	let loading = $state(true);
