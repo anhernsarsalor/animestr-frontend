@@ -4,7 +4,7 @@
 	import AnimeGenres from '$lib/components/AnimeGenres.svelte';
 	import AnimeIdentifiers from '$lib/components/AnimeIdentifiers.svelte';
 	import Loading from '$lib/components/Loading.svelte';
-	import { animeEventLoader } from '$lib';
+	import { animeEventLoader } from '$lib/anime';
 	import AnimeBasicInfo from '$lib/components/AnimeBasicInfo.svelte';
 
 	let animeData = animeEventLoader(page.params.id);
