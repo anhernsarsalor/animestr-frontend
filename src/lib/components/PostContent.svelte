@@ -13,6 +13,8 @@
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import Loading from './Loading.svelte';
 	import { bytesToHex } from 'nostr-tools/utils';
+	import LightningPopup from './LightningPopup.svelte';
+	import { from, interval, switchMap, tap, takeWhile } from 'rxjs';
 
 	interface Props {
 		content: string;
@@ -31,6 +33,7 @@
 
 	let contentToProcess = $derived(showOriginal ? originalContent : content);
 	let processedContent = $derived(contentProcessor.process(contentToProcess, emoji));
+	let fundTranslationInvoice = $state();
 
 	function detectLanguage(text: string) {
 		const japaneseChars = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\uFF65-\uFF9F]/;
@@ -79,14 +82,41 @@
 			localStorage.setItem('translation-' + contentSha, translation)!;
 			translated = true;
 		} catch (e) {
-			alert(
-				'Not enough funds for translation. If you know what to do here is the information you need\nThis will be improved very soon:\n' +
-					JSON.stringify(e, null, 2)
-			);
+			const tx = e.tx;
+			if (!tx) return alert('unknown error');
+			fundTranslationInvoice = e.tx as {
+				invoiceId: string;
+				transactionId: string;
+			};
+			alert('Not enough funds for translation. Please pay the upcoming invoice');
+			interval(1000)
+				.pipe(
+					switchMap(() =>
+						from(
+							fetch(
+								`https://api.jumble.social/v1/transactions/${fundTranslationInvoice.transactionId}/check`,
+								{
+									method: 'POST'
+								}
+							).then((res) => res.json())
+						)
+					),
+					tap((response) => {
+						if (response.state === 'settled') fundTranslationInvoice = undefined;
+					}),
+					takeWhile((response) => response.state !== 'settled', true)
+				)
+				.subscribe((r) => {
+					if (r.state === 'settled') getTranslationOfContent(content);
+				});
 		}
 		translating = false;
 	}
 </script>
+
+{#if fundTranslationInvoice}
+	<LightningPopup invoice={fundTranslationInvoice.invoiceId} />
+{/if}
 
 {#if nostr.activeUser}
 	<button class="btn btn-ghost" onclick={() => getTranslationOfContent(content)}>

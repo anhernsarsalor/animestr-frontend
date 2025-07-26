@@ -1,4 +1,5 @@
 import { eventFactory } from "$lib";
+import { nostr } from "./stores/signerStore.svelte";
 
 let translationApiKey = (() => {
   let translationApiKey = '';
@@ -48,14 +49,18 @@ export async function getTranslation(content: string, target: string) {
   const resp = await req.json();
   if (resp.code === "01002") {
     const tx = await fetch('https://api.jumble.social/v1/transactions', {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
-        "pubkey": "f7a0388ce16e7955a104572c9222ed8d7b61fa047844d1f7bada67f6f561ea8b",
+        "pubkey": nostr.activeUser,
         "purpose": "translation",
         "amount": Math.floor(Math.max(1000, content.length / 100))
       })
-    })
+    }).then(tx => tx.json())
     throw {
-      message: "Not enough funds",
+      message: 'Not Enough Funds!',
       tx
     };
   }
