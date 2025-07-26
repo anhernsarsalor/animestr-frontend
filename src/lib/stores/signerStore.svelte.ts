@@ -4,16 +4,14 @@ export const nostr = $state<{
   activeUser: undefined,
 });
 
-const waitTillWindowNostr = () => {
-  return new Promise<void>((resolve) => {
-    const interval = setInterval(() => {
-      if (window.nostr) {
-        clearInterval(interval);
-        resolve();
-      }
-    }, 100);
-  });
-};
+const waitTillWindowNostr = () => new Promise<void>((resolve) => {
+  const interval = setInterval(() => {
+    if (window.nostr) {
+      clearInterval(interval);
+      resolve();
+    }
+  }, 100);
+});
 
 export const initSigner = async () => {
   if (typeof window === 'undefined') return;

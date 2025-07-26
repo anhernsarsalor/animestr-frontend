@@ -4,9 +4,11 @@ import { onlyEvents, RelayPool } from "applesauce-relay";
 import type { Event, Filter } from "nostr-tools";
 import { openDB, getEventsForFilters, addEvents } from "nostr-idb";
 import { bufferTime, filter, map, scan, startWith } from "rxjs";
-import { isFromCache } from "applesauce-core/helpers";
+import { isEventPointer, isFromCache } from "applesauce-core/helpers";
 import { EventFactory, type EventFactoryTemplate, type EventOperation } from "applesauce-factory";
 import { ExtensionSigner } from "applesauce-signers";
+import { decode } from "nostr-tools/nip19";
+import { type EventPointer } from "nostr-tools/nip19";
 
 export function keepAliveRequest(relays: string[], filters: Filter[]) {
   return pool.group(relays).subscription(filters).pipe(
@@ -51,9 +53,13 @@ export const eventFactory = new EventFactory({
   },
 });
 
-export async function createEvent(template: EventFactoryTemplate, ...operations: (EventOperation | undefined)[]) {
+export async function signEvent(template: EventFactoryTemplate, ...operations: (EventOperation | undefined)[]) {
   const note = await eventFactory.build(template, ...operations)
-  const signed = await eventFactory.sign(note);
+  return await eventFactory.sign(note);
+}
+
+export async function createEvent(template: EventFactoryTemplate, ...operations: (EventOperation | undefined)[]) {
+  const signed = await signEvent(template, ...operations);
   pool.publish(relays, signed).subscribe({
     next(publishResponse) {
       if (publishResponse.ok) {
@@ -67,7 +73,9 @@ export async function createEvent(template: EventFactoryTemplate, ...operations:
 
 export const cacheRequest = (filters: Filter[]) => getEventsForFilters(cache, filters);
 
-export const addressLoader = createAddressLoader(pool, {
+export const addressLoader = createAddressLoader({
+  request: keepAliveRequest
+}, {
   eventStore,
   cacheRequest,
 });
@@ -94,7 +102,7 @@ export const profileLoader = (userPub: string) => addressLoader({
 })
 
 export const eventLoader = (eventId: string) => eventsLoader({
-  id: eventId,
+  id: normalizeToEventId(eventId),
   relays
 });
 
@@ -109,3 +117,28 @@ export const contentEditsLoader = (event: Event) => createTimelineLoader({
   scan((events, event) => [...events, event].toSorted((a, b) => b.created_at - a.created_at), [] as Event[]),
   map(events => events[0])
 )
+
+export function normalizeToEventId(
+  input: string | EventPointer | Event
+): string {
+  if (typeof input === "string" && input.length === 64 && /^[a-f0-9]+$/i.test(input))
+    return input;
+  if (typeof input === "object" && "id" in input && "pubkey" in input)
+    return input.id;
+  if (typeof input === "object" && "id" in input && !("pubkey" in input))
+    return input.id;
+  if (typeof input === "string")
+    try {
+      const decoded = decode(input);
+      if (decoded.type === "note")
+        return decoded.data as string;
+      if (decoded.type === "nevent" && isEventPointer(decoded.data))
+        return decoded.data.id;
+    } catch (error) {
+      if (input.length === 64 && /^[a-f0-9]+$/i.test(input))
+        return input;
+      throw new Error(`Unable to normalize to event ID: ${input}`);
+    }
+
+  throw new Error(`Invalid input type for normalizeToEventId: ${typeof input}`);
+}

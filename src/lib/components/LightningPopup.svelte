@@ -1,18 +1,23 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { from, interval, switchMap, tap, takeWhile } from 'rxjs';
+	import { from, interval, switchMap, tap, takeWhile, timer } from 'rxjs';
 	import Loading from './Loading.svelte';
 	import QrCode from './QRCode.svelte';
 	let {
 		invoice,
-		verify
+		verify,
+		onclosed
 	}: {
 		invoice: string;
 		verify?: string;
+		onclosed?: () => void;
 	} = $props();
 
 	let settled = $state(false);
 	let open = $state(true);
+
+	$effect(() => {
+		if (!open) onclosed?.();
+	});
 
 	$effect(() => {
 		if (!verify) return;
@@ -22,12 +27,12 @@
 				tap((response) => {
 					if (response.settled) {
 						settled = true;
-						setTimeout(() => {
+						timer(2000).subscribe(() => {
 							open = false;
-						}, 2000);
+						});
 					}
 				}),
-				takeWhile((response) => !response.settled, true)
+				takeWhile((response) => !response.settled && open, true)
 			)
 			.subscribe(console.log);
 
@@ -42,11 +47,15 @@
 			<QrCode text={invoice} />
 			<pre>{invoice}</pre>
 		{:else}
-			<Loading inline />
+			<div class="flex items-center justify-center p-10">
+				<Loading inline />
+			</div>
 		{/if}
 		{#if settled}
 			<h1 class="text-center text-lg text-green-500">Paid!</h1>
 		{/if}
-		<button onclick={() => (open = false)}>Close</button>
+		{#if invoice}
+			<button onclick={() => (open = false)}>Close</button>
+		{/if}
 	</div>
 </dialog>
