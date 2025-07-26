@@ -31,4 +31,5 @@ export const initSigner = async () => {
   };
 
   document.addEventListener('nlAuth', handleAuth);
+  window.nostr.getPublicKey()
 };
