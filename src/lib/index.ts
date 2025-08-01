@@ -82,6 +82,10 @@ export const addressLoader = createAddressLoader({
   cacheRequest,
 });
 
+export const simpleAddressLoader = createAddressLoader(pool, {
+  eventStore,
+})
+
 const eventsLoader = createEventLoader(pool, {
   eventStore,
   cacheRequest,
@@ -97,7 +101,7 @@ export const timelineLoader = (...filters: Filter[]) => createTimelineLoader({
   startWith([])
 )
 
-export const profileLoader = (userPub: string) => addressLoader({
+export const profileLoader = (userPub: string) => simpleAddressLoader({
   kind: 0,
   pubkey: userPub,
   relays
