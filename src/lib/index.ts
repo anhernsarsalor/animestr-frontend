@@ -9,6 +9,7 @@ import { EventFactory, type EventFactoryTemplate, type EventOperation } from "ap
 import { ExtensionSigner } from "applesauce-signers";
 import { decode } from "nostr-tools/nip19";
 import { type EventPointer } from "nostr-tools/nip19";
+import { browser } from "$app/environment";
 
 export function keepAliveRequest(relays: string[], filters: Filter[]) {
   return pool.group(relays).subscription(filters).pipe(
@@ -17,7 +18,7 @@ export function keepAliveRequest(relays: string[], filters: Filter[]) {
   )
 }
 
-const cache = await openDB();
+const cache = browser ? await openDB() : null;
 
 export const eventStore = new EventStore();
 
@@ -39,9 +40,10 @@ eventStore.insert$
     filter((b) => b.length > 0),
   )
   .subscribe((events) => {
-    addEvents(cache, events).then(() => {
-      console.log("Saved events to cache", events.length);
-    });
+    if (cache)
+      addEvents(cache, events).then(() => {
+        console.log("Saved events to cache", events.length);
+      });
   });
 
 const signer = new ExtensionSigner();

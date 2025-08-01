@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {
 	themes:
@@ -11,7 +12,6 @@
 	logs: true;
 }
 
-/* Import Inter font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
 
@@ -116,4 +116,263 @@
 	.animate-once {
 		animation-iteration-count: 1;
 	}
+}
+
+.carta-theme__animestr {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --border-color: #2b3138;
+  --accent-color: #1f6feb;
+  --text-primary: white;
+  --border-radius: 0.5rem;
+  --border-radius-sm: 0.25rem;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --font-mono: 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  --transition: all 0.2s ease;
+}
+
+.carta-theme__animestr.carta-editor {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+
+  &:focus-within {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -1px;
+  }
+
+  .carta-wrapper {
+    padding: var(--spacing-lg);
+    flex-grow: 1;
+  }
+
+  .carta-input,
+  .carta-renderer {
+    min-height: 7.5rem; 
+    max-height: 10rem;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+  }
+
+  .carta-font-code {
+    font-family: var(--font-mono);
+    caret-color: var(--text-primary);
+    font-size: clamp(1rem, 2.5vw, 1.1rem);
+    line-height: 1.5;
+    pre {
+      padding: 0;
+    }
+  }
+}
+
+.carta-theme__animestr.carta-editor .carta-toolbar {
+  height: 2.5rem;
+  background-color: var(--bg-secondary);
+  border-start-start-radius: var(--border-radius);
+  border-start-end-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+
+  .carta-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--text-primary);
+      background-color: var(--border-color);
+      outline: 2px solid transparent;
+    }
+  }
+}
+
+.carta-theme__animestr.carta-editor .carta-toolbar-left {
+  display: none;
+
+  button,
+  & ~ .carta-toolbar-right,
+  & ~ .carta-filler {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  & > *:first-child {
+    border-start-start-radius: var(--border-radius);
+  }
+
+  & > * {
+    padding-inline: var(--spacing-lg);
+    font-size: 0.95rem;
+  }
+
+  button {
+    height: 100%;
+    transition: var(--transition);
+  }
+
+  .carta-active {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-inline-end: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--bg-primary);
+
+    &:not(:first-child) {
+      border-inline-start: 1px solid var(--border-color);
+    }
+  }
+}
+
+.carta-theme__animestr.carta-editor .carta-toolbar-right {
+  padding-inline-end: 0.75rem;
+}
+
+.carta-theme__animestr.carta-editor .carta-icons-menu {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  min-width: 11.25rem; /* 180px to rem */
+  background: var(--bg-primary);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+
+  .carta-icon-full {
+    padding-inline: 6px;
+    margin-block-start: 2px;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+
+    &:first-child {
+      margin-block-start: 0;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: var(--text-primary);
+      background-color: var(--border-color);
+    }
+
+    span {
+      margin-inline-start: 6px;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+    }
+  }
+}
+
+.carta-theme__animestr.carta-emoji {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
+  gap: var(--spacing-xs);
+  justify-content: start;
+  width: 19rem;
+  max-height: 14rem;
+  overflow: auto;
+  border-radius: var(--border-radius-sm);
+  font-family: inherit;
+  background-color: var(--bg-primary);
+  word-break: break-word;
+  scroll-padding: 6px;
+  padding: var(--spacing-sm);
+
+  button {
+    background: var(--bg-secondary);
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+    border: 0;
+    padding: 0;
+    aspect-ratio: 1;
+    min-width: 2rem;
+    font-size: 1.2rem;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    transition: var(--transition);
+
+    &:hover,
+    &:focus-visible,
+    &.carta-active {
+      background: var(--border-color);
+      transform: scale(1.05);
+    }
+  }
+}
+
+.carta-theme__animestr.carta-slash {
+  width: 18rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  border-radius: var(--border-radius-sm);
+  font-family: inherit;
+  background-color: var(--bg-primary);
+  padding: 6px;
+  scroll-padding: 6px;
+
+  span {
+    width: fit-content;
+  }
+
+  button {
+    background: none;
+    width: 100%;
+    padding: 10px;
+    border: 0;
+    border-radius: var(--border-radius-sm);
+    text-align: start;
+    transition: var(--transition);
+
+    &.carta-active,
+    &:hover,
+    &:focus-visible {
+      background: var(--bg-secondary);
+      cursor: pointer;
+    }
+  }
+
+  .carta-slash-group {
+    padding-inline: 4px;
+    margin-block-end: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    opacity: 0.7;
+  }
+
+  .carta-snippet-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .carta-snippet-description {
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .carta-theme__animestr .shiki,
+  .carta-theme__animestr .shiki span {
+    color: var(--shiki-dark) !important;
+  }
+}
+
+html.dark .carta-theme__animestr .shiki,
+html.dark .carta-theme__animestr .shiki span {
+  color: var(--shiki-dark) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carta-theme__animestr * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

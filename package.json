@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^6.0.0",
@@ -17,6 +19,7 @@
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.8",
+    "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.8",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
@@ -28,7 +31,8 @@
     "tailwindcss": "^4.1.8",
     "typescript": "^5.0.0",
     "vite": "^6.2.6",
-    "vite-plugin-devtools-json": "^0.1.1"
+    "vite-plugin-devtools-json": "^0.1.1",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -40,13 +44,22 @@
     "applesauce-loaders": "^2.1.0",
     "applesauce-relay": "^2.3.0",
     "applesauce-signers": "^2.0.0",
+    "carta-md": "^4.11.1",
     "daisyui": "^5.0.43",
     "dayjs": "^1.11.13",
     "emoji-mart": "^5.6.0",
     "headless-qr": "^1.0.3",
+    "katex": "^0.16.22",
     "nostr-idb": "^2.4.0",
     "nostr-login": "^1.7.11",
     "nostr-tools": "^2.15.0",
-    "rxjs": "^7.8.2"
+    "remark-gfm": "^4.0.1",
+    "remark-images": "^4.1.0",
+    "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "rxjs": "^7.8.2",
+    "svelte-katex": "^0.2.0",
+    "unified": "^11.0.5",
+    "unist-util-remove-position": "^5.0.0"
   }
 }

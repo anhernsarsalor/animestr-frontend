@@ -29,7 +29,7 @@
 			frameborder="0"
 			allowfullscreen
 			loading="lazy"
-			allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+			allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
 		></iframe>
 	{/if}
 </div>

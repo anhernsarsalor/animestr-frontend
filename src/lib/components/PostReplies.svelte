@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Post from './Post.svelte';
 	import { filterOnlyDirectReplies } from '$lib/nostr/filterEvents.svelte';
-	import { scale } from 'svelte/transition';
+	import { slide } from 'svelte/transition';
 	import NewPostEditor from './NewPostEditor.svelte';
 	import type { Event } from 'nostr-tools';
 	import { timelineLoader } from '$lib';
@@ -16,8 +16,8 @@
 </script>
 
 <div
-	class="card bg-base-200 border-base-300 border shadow-sm transition-all hover:shadow-md"
-	transition:scale
+	class="card bg-base-200 border-base-300 border p-4 shadow-sm transition-all hover:shadow-md"
+	transition:slide
 >
 	{#if nostr.activeUser}
 		<NewPostEditor replyTo={parent} />

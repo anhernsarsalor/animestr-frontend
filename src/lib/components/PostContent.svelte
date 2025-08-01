@@ -1,20 +1,12 @@
 <script lang="ts">
-	import { contentProcessor } from '$lib/stores/contentProcessor.js';
-	import ContentImage from './ContentImage.svelte';
-	import YouTubeEmbed from './YoutubeEmbed.svelte';
-	import ContentVideo from './ContentVideo.svelte';
-	import NostrEventReference from './NostrEventReference.svelte';
-	import AnimeReference from './AnimeReference.svelte';
-	import AnimestrLogo from './AnimestrLogo.svelte';
 	import PostContent from './PostContent.svelte';
-	import UserInfo from './UserInfo.svelte';
-	import ContentUrl from './ContentUrl.svelte';
 	import { getTranslation } from '$lib/translation';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import Loading from './Loading.svelte';
 	import { bytesToHex } from 'nostr-tools/utils';
 	import LightningPopup from './LightningPopup.svelte';
 	import { from, interval, switchMap, tap, takeWhile } from 'rxjs';
+	import RenderMarkdown from './RenderMarkdown.svelte';
 
 	interface Props {
 		content: string;
@@ -32,7 +24,6 @@
 	let translated = $state(false);
 
 	let contentToProcess = $derived(showOriginal ? originalContent : content);
-	let processedContent = $derived(contentProcessor.process(contentToProcess, emoji));
 	let fundTranslationInvoice = $state();
 
 	function detectLanguage(text: string) {
@@ -160,7 +151,7 @@
 		</button>
 	</div>
 {:else}
-	<div class="content">
+	<div class="prose prose-neutral max-w-none">
 		{#if isEdited}
 			<div class="text-base-content/60 mb-4 text-xs font-medium">
 				{showOriginal ? 'Original' : 'Edited'}
@@ -172,76 +163,11 @@
 				</button>
 			</div>
 		{/if}
-		{#each processedContent as segment}
-			{#if segment.type === 'text'}
-				<span>{@html segment.content}</span>
-			{:else if segment.type === 'animestr-logo'}
-				<AnimestrLogo inline />
-			{:else if segment.type === 'image'}
-				<ContentImage src={segment.content} />
-			{:else if segment.type === 'hashtag'}
-				<a class="hashtag" href={`/hashtag/${segment.content}`}>#{segment.content}</a>
-			{:else if segment.type === 'url'}
-				<ContentUrl url={segment.content} />
-			{:else if segment.type === 'mention'}
-				<UserInfo user={segment.data} inline />
-			{:else if segment.type === 'youtube'}
-				<YouTubeEmbed videoId={segment.content} />
-			{:else if segment.type === 'video'}
-				<ContentVideo src={segment.content} />
-			{:else if segment.type === 'markdown'}
-				{#if segment.data.element === 'link' && 'href' in segment.data}
-					<a href={segment.data.href as string} target="_blank" class="url-link">
-						{segment.content}
-					</a>
-				{:else if segment.data.element === 'anime'}
-					<AnimeReference animeId={segment.data.content} source={segment.data.source} />
-				{:else}
-					<svelte:element this={segment.data.element}>{segment.content}</svelte:element>
-				{/if}
-			{:else if segment.type === 'event'}
-				<NostrEventReference eventId={segment.content} />
-			{:else if segment.type === 'anime'}
-				<AnimeReference animeId={segment.data.id} source={segment.data.source} />
-			{:else}
-				{JSON.stringify(segment)}
-			{/if}
-		{/each}
+		<RenderMarkdown markdown={contentToProcess} {emoji} />
 	</div>
 {/if}
 
 <style>
-	.content {
-		word-break: break-word;
-		margin-top: 10px;
-		line-height: 1.6;
-		overflow-wrap: break-word;
-	}
-
-	:global(.content p) {
-		margin: 0 0 1em 0;
-	}
-
-	:global(.content p:last-child) {
-		margin-bottom: 0;
-	}
-
-	:global(.content h1, .content h2, .content h3, .content h4, .content h5, .content h6) {
-		margin: 1.2em 0 0.6em 0;
-		line-height: 1.3;
-	}
-
-	:global(
-		.content h1:first-child,
-		.content h2:first-child,
-		.content h3:first-child,
-		.content h4:first-child,
-		.content h5:first-child,
-		.content h6:first-child
-	) {
-		margin-top: 0;
-	}
-
 	:global(.youtube-container) {
 		position: relative;
 		width: 100%;

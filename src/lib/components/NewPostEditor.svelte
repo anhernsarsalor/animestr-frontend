@@ -1,25 +1,19 @@
 <script lang="ts">
+	import { Carta, MarkdownEditor } from 'carta-md';
+	import 'carta-md/default.css';
 	import UserAvatar from './UserAvatar.svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import type { Event } from 'nostr-tools';
 	import { createEvent } from '$lib';
 
+	const carta = new Carta({
+		sanitizer: false,
+		extensions: []
+	});
+
 	let { replyTo }: { replyTo?: Event } = $props();
 
 	let content = $state('');
-	let textareaElement: HTMLTextAreaElement;
-
-	const handleInput = () => {
-		if (!textareaElement) return;
-		textareaElement.style.height = 'auto';
-		textareaElement.style.height = `${textareaElement.scrollHeight}px`;
-	};
-
-	$effect(() => {
-		if (content || !content) {
-			queueMicrotask(handleInput);
-		}
-	});
 
 	async function createPost() {
 		let event = {
@@ -45,14 +39,7 @@
 			<UserAvatar user={nostr.activeUser} />
 
 			<div class="flex-1">
-				<textarea
-					bind:this={textareaElement}
-					class="textarea textarea-ghost w-full resize-none overflow-hidden bg-transparent p-2 text-base transition-all duration-200 focus:border-transparent focus:ring-0 focus:outline-none"
-					placeholder="What's on your mind?"
-					bind:value={content}
-					oninput={handleInput}
-					rows="1"
-				></textarea>
+				<MarkdownEditor mode="tabs" theme="animestr" bind:value={content} {carta} />
 				<div class="card-actions mt-2 justify-end">
 					<button onclick={createPost} class="btn btn-primary btn-sm" disabled={!content.trim()}>
 						Post
@@ -72,3 +59,9 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	:global(.carta-renderer) {
+		display: none;
+	}
+</style>

@@ -24,6 +24,7 @@
 
 <div
 	class="items-center gap-2"
+	class:ml-2={inline}
 	class:gap-1={inline}
 	class:flex={!inline}
 	class:inline-flex={inline}
