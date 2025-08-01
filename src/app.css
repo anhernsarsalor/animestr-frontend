@@ -376,3 +376,7 @@ html.dark .carta-theme__animestr .shiki span {
     animation: none !important;
   }
 }
+
+.prose {
+  line-height: 1.5;
+}
