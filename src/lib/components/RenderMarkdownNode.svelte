@@ -103,6 +103,10 @@
 	<li>{@render children(node.children, emoji)}</li>
 {:else if node.type === 'blockquote'}
 	<blockquote>{@render children(node.children, emoji)}</blockquote>
+{:else if node.type === 'break'}
+	<br />
+{:else if node.type === 'thematicBreak'}
+	<hr />
 {:else}
 	<p>
 		Unknown node: {JSON.stringify(node)}, if you see this, please let
