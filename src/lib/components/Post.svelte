@@ -53,6 +53,10 @@
 		zapModalOpen = false;
 		invoice = getZapInvoice(event, zapAmount, zapComment || '');
 	}
+
+	function cancel() {
+		zapModalOpen = false;
+	}
 </script>
 
 {#if invoice}
@@ -118,6 +122,7 @@
 			<Icon icon="icon-park-twotone:lightning" />
 			Zap!
 		</button>
+		<button class="btn btn-secondary w-full" onclick={cancel}> Cancel </button>
 	</div>
 </dialog>
 
