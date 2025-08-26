@@ -1,5 +1,7 @@
 <script lang="ts">
 	import UserInfo from '$lib/components/UserInfo.svelte';
+	import { nip19 } from 'nostr-tools';
+	import NostrEventReference from './NostrEventReference.svelte';
 
 	let {
 		json = '',
@@ -62,13 +64,8 @@
 		return new Date(timestamp * 1000).toISOString();
 	}
 
-	function isNostrTimestamp(key: string, value: any): boolean {
-		return (
-			(key === 'created_at' || key.includes('_at')) &&
-			typeof value === 'number' &&
-			value > 1000000000 &&
-			value < 9999999999
-		);
+	function isNostrTimestamp(key: string): boolean {
+		return key === 'created_at' || key.includes('_at');
 	}
 
 	function getTagTypeColor(tagType: string): string {
@@ -179,8 +176,20 @@
 																		</div>
 																	{/if}
 																</div>
+															{:else if tag[0] === 'e' && tag[1]}
+																<div class="bg-base-100 rounded-lg p-3">
+																	<a href="/event/{tag[1]}">
+																		{nip19.noteEncode(tag[1])}
+																	</a>
+																	<NostrEventReference eventId={tag[1]} />
+																	{#if tag[2]}
+																		<div class="mt-2 text-xs opacity-60">
+																			<span class="font-medium">Relay:</span>
+																			<span class="font-mono">{tag[2]}</span>
+																		</div>
+																	{/if}
+																</div>
 															{:else}
-																<!-- Other tag types -->
 																<div class="space-y-2">
 																	{#each tag.slice(1) as tagValue, tagIndex}
 																		<div class="flex items-start gap-2">
@@ -189,26 +198,37 @@
 																			>
 																			<div class="flex-1">
 																				{#if typeof tagValue === 'string' && tagValue.length > 80}
-																					<details class="bg-base-100 collapse">
-																						<summary
-																							class="collapse-title min-h-0 cursor-pointer p-2 text-sm"
-																						>
-																							<span class="font-mono text-xs opacity-80">
-																								{tagValue.substring(0, 80)}...
-																							</span>
-																						</summary>
-																						<div class="collapse-content px-2 pb-2">
-																							<div
-																								class="bg-base-300 max-h-24 overflow-y-auto rounded p-2"
-																							>
-																								<pre
-																									class="font-mono text-xs break-all whitespace-pre-wrap">{tagValue}</pre>
-																							</div>
+																					{#if isNostrTimestamp(tag[0])}
+																						<div class="text-xs opacity-60">
+																							📅 {formatTimestamp(Number.parseInt(tagValue))}
 																						</div>
-																					</details>
+																					{:else}
+																						<details class="bg-base-100 collapse">
+																							<summary
+																								class="collapse-title min-h-0 cursor-pointer p-2 text-sm"
+																							>
+																								<span class="font-mono text-xs opacity-80">
+																									{tagValue.substring(0, 80)}...
+																								</span>
+																							</summary>
+																							<div class="collapse-content px-2 pb-2">
+																								<div
+																									class="bg-base-300 max-h-24 overflow-y-auto rounded p-2"
+																								>
+																									<pre
+																										class="font-mono text-xs break-all whitespace-pre-wrap">{tagValue}</pre>
+																								</div>
+																							</div>
+																						</details>
+																					{/if}
 																				{:else}
 																					<span class="font-mono text-sm break-all">{tagValue}</span
 																					>
+																					{#if isNostrTimestamp(tag[0])}
+																						<div class="text-xs opacity-60">
+																							📅 {formatTimestamp(tagValue)}
+																						</div>
+																					{/if}
 																				{/if}
 																			</div>
 																		</div>
@@ -287,7 +307,7 @@
 													<span class="break-all">{formatValue(value)}</span>
 												{/if}
 											</div>
-											{#if isNostrTimestamp(key, value)}
+											{#if isNostrTimestamp(key)}
 												<div class="text-xs opacity-60">
 													📅 {formatTimestamp(value)}
 												</div>
