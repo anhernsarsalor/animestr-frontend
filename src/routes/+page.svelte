@@ -18,6 +18,11 @@
 		{
 			kinds: [1],
 			'#p': animeCreators
+		},
+		{
+			kinds: [30618],
+			authors: ['74fb3ef27cd8985d7fefc6e94d178290275f5492557b4a166ab9cd1458adabc7'],
+			'#d': ['animestr-web']
 		}
 	).pipe(filterNoReplies);
 </script>

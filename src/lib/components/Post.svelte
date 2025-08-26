@@ -157,6 +157,39 @@
 			/>
 		{:else if event.kind === 31111}
 			<PostContentListUpdate {event} />
+		{:else if event.kind === 30618 && event.pubkey === '74fb3ef27cd8985d7fefc6e94d178290275f5492557b4a166ab9cd1458adabc7' && event.tags.some((t) => t[0] === 'd' && t[1] === 'animestr-web')}
+			{@const ref = event.tags.find((t) => t[0] === 'refs/heads/master')?.[1]}
+			<div class="card bg-info text-info-content shadow-xl">
+				<div class="card-body">
+					<div class="flex items-center gap-3">
+						<div class="badge badge-accent badge-lg">
+							<Icon icon="octicon:git-commit-16" class="mr-1 h-4 w-4" />
+							COMMIT
+						</div>
+						<h2 class="card-title text-xl">New commit pushed to animestr</h2>
+					</div>
+
+					<div class="divider my-2"></div>
+
+					<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+						<span class="font-medium opacity-80">Commit Hash:</span>
+						<div class="flex items-center gap-2">
+							<code class="bg-base-100 text-base-content rounded px-2 py-1 font-mono text-sm">
+								{ref}
+							</code>
+							<a
+								href="https://github.com/anhernsarsalor/animestr-frontend/commit/{ref}"
+								class="btn btn-accent btn-sm"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<Icon icon="tabler:external-link" class="mr-1 h-4 w-4" />
+								View on GitHub
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
 		{:else}
 			<PrettyJson title="Unknown Event" json={event} />
 		{/if}
