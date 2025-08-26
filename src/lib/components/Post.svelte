@@ -17,6 +17,7 @@
 	import Icon from '@iconify/svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import PrettyJson from './PrettyJson.svelte';
+	import LongFormArticle from './LongFormArticle.svelte';
 
 	const usersWhoPostNSFWWithoutMarks = [
 		// 'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
@@ -155,6 +156,8 @@
 				isSensitive={isSensitiveContent}
 				emoji={emoji()}
 			/>
+		{:else if event.kind === 30023}
+			<LongFormArticle {event} />
 		{:else if event.kind === 31111}
 			<PostContentListUpdate {event} />
 		{:else if event.kind === 30618 && event.pubkey === '74fb3ef27cd8985d7fefc6e94d178290275f5492557b4a166ab9cd1458adabc7' && event.tags.some((t) => t[0] === 'd' && t[1] === 'animestr-web')}

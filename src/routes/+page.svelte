@@ -12,7 +12,7 @@
 
 	const timeline = timelineLoader(
 		{
-			kinds: [1, 24, 31111],
+			kinds: [1, 24, 30023, 31111],
 			'#t': ['animestr']
 		},
 		{
