@@ -8,6 +8,8 @@
 	import { getDisplayName, getProfileContent, normalizeToPubkey } from 'applesauce-core/helpers';
 	import WatchList from '$lib/components/WatchList.svelte';
 	import { npubEncode } from 'nostr-tools/nip19';
+	import UserFollowers from '$lib/components/UserFollowers.svelte';
+	import UserFollowing from '$lib/components/UserFollowing.svelte';
 
 	let pubkey = $derived(normalizeToPubkey(page.params.id));
 	let npub = $derived(npubEncode(pubkey));
@@ -51,7 +53,7 @@
 				></div>
 			</div>
 		{/if}
-		<div class="bg-base-200 mb-6 rounded-lg p-6 pt-16 shadow-sm">
+		<div class="join bg-base-200 mb-6 w-full rounded-lg p-6 pt-16 shadow-sm">
 			<div class:-mt-20={profile?.banner} class="avatar">
 				<UserAvatar user={pubkey} />
 			</div>
@@ -93,6 +95,30 @@
 			/>
 			<div class="tab-content bg-base-100 border-base-300 p-6">
 				<WatchList {pubkey} />
+			</div>
+
+			<input
+				type="radio"
+				name="userTabs"
+				class="tab"
+				aria-label="Following"
+				value="following"
+				bind:group={selectedTab}
+			/>
+			<div class="tab-content bg-base-100 border-base-300 p-6">
+				<UserFollowing {pubkey} />
+			</div>
+
+			<input
+				type="radio"
+				name="userTabs"
+				class="tab"
+				aria-label="Followers"
+				value="followers"
+				bind:group={selectedTab}
+			/>
+			<div class="tab-content bg-base-100 border-base-300 p-6">
+				<UserFollowers {pubkey} />
 			</div>
 		</div>
 	</div>

@@ -22,11 +22,17 @@
 			tags: [['t', 'animestr']]
 		};
 		if (replyTo) {
-			const root = replyTo.tags.find((t) => t[0] === 'e' && t[3] === 'root')?.[1];
-			if (root) {
-				event.tags.push(['e', root, '', 'root']);
-				event.tags.push(['e', replyTo.id, '', 'reply']);
-			} else event.tags.push(['e', replyTo.id, '', 'root']);
+			if (replyTo.kind === 24) {
+				event.kind = 24;
+				event.tags.push(['q', replyTo.id]);
+			} else {
+				const root = replyTo.tags.find((t) => t[0] === 'e' && t[3] === 'root')?.[1];
+				if (root) {
+					event.tags.push(['e', root, '', 'root']);
+					event.tags.push(['e', replyTo.id, '', 'reply']);
+				} else event.tags.push(['e', replyTo.id, '', 'root']);
+			}
+			event.tags.push(['p', replyTo.pubkey]);
 		}
 		await createEvent(event);
 		content = '';

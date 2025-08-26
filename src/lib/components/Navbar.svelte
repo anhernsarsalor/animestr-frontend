@@ -11,6 +11,8 @@
 	import Loading from './Loading.svelte';
 	import AnimeSearchResults from './AnimeSearchResults.svelte';
 	import type { AnimeData } from '$lib/anime';
+	import { notificationsLoader } from '$lib';
+	import { from, startWith } from 'rxjs';
 
 	let search = $state('');
 	let searchDialog: HTMLDialogElement | null = null;
@@ -61,6 +63,14 @@
 		await initSigner();
 		isLoggingIn = false;
 	}
+
+	let notifications = $derived(
+		nostr.activeUser ? notificationsLoader() : from([]).pipe(startWith([]))
+	);
+	function reloadNotifications() {
+		if (!nostr.activeUser) return;
+		notifications = notificationsLoader();
+	}
 </script>
 
 <div class="navbar bg-base-300 fixed z-50 shadow-sm">
@@ -74,12 +84,20 @@
 		<button onclick={openSearchDialog} class="btn btn-ghost btn-circle">
 			<Icon icon="line-md:search-twotone" width="32" />
 		</button>
-		<button
-			class="btn btn-ghost btn-circle"
-			onclick={() => alert('Notifications are not implemented yet')}
+		<a
+			class="btn btn-ghost btn-circle relative"
+			href="/notifications"
+			onclick={reloadNotifications}
 		>
 			<Icon icon="line-md:bell-twotone-loop" width="32" />
-		</button>
+			{#if $notifications.length > 0 && $notifications.length < 100}
+				<span class="badge badge-sm badge-primary absolute -top-2 -right-2">
+					{$notifications.length}
+				</span>
+			{:else if $notifications.length >= 100}
+				<span class="badge badge-sm badge-primary absolute -top-2 -right-2">99+</span>
+			{/if}
+		</a>
 		<div class="mr-4">
 			{#if nostr.activeUser}
 				<button popovertarget="user-menu">

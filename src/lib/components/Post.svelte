@@ -16,6 +16,7 @@
 	import { getZapInvoice } from '$lib/zaps';
 	import Icon from '@iconify/svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
+	import PrettyJson from './PrettyJson.svelte';
 
 	const usersWhoPostNSFWWithoutMarks = [
 		// 'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
@@ -146,7 +147,7 @@
 			<a class="btn btn-ghost shrink-0" href="/event/{event.id}">#</a>
 		</div>
 
-		{#if event.kind === 1}
+		{#if event.kind === 1 || event.kind === 1111 || event.kind === 24}
 			<PostContent
 				originalContent={event.content}
 				content={postContent}
@@ -154,8 +155,10 @@
 				isSensitive={isSensitiveContent}
 				emoji={emoji()}
 			/>
-		{:else}
+		{:else if event.kind === 31111}
 			<PostContentListUpdate {event} />
+		{:else}
+			<PrettyJson title="Unknown Event" json={event} />
 		{/if}
 
 		<div class="card-actions mt-2 justify-end">

@@ -10,6 +10,8 @@ import { ExtensionSigner } from "applesauce-signers";
 import { decode } from "nostr-tools/nip19";
 import { type EventPointer } from "nostr-tools/nip19";
 import { browser } from "$app/environment";
+import { spamUsers } from "./spam";
+import { nostr } from "./stores/signerStore.svelte";
 
 export function keepAliveRequest(relays: string[], filters: Filter[]) {
   return pool.group(relays).subscription(filters).pipe(
@@ -97,6 +99,7 @@ export const timelineLoader = (...filters: Filter[]) => createTimelineLoader({
   cache: cacheRequest,
   eventStore,
 })().pipe(
+  filter(e => !spamUsers.includes(e.pubkey)),
   scan((events, event) => [...events, event].toSorted((a, b) => b.created_at - a.created_at), [] as Event[]),
   startWith([])
 )
@@ -147,4 +150,26 @@ export function normalizeToEventId(
     }
 
   throw new Error(`Invalid input type for normalizeToEventId: ${typeof input}`);
+}
+
+export function getLastNotificationTime() {
+  const time = Number.parseInt(localStorage.getItem("notifications-last") || "0")
+  if (Number.isNaN(time))
+    return 0;
+  return time;
+}
+
+export function notificationsLoader(since: number = NaN) {
+  if (Number.isNaN(since) || since < 0)
+    since = getLastNotificationTime();
+  return timelineLoader({
+    '#p': [nostr.activeUser!],
+    since
+  }).pipe(
+    map((events) =>
+      events
+        .filter((e) => e.kind !== 3 && e.kind !== 6 && e.kind != 9735) // TODO: handle those better
+        .filter((e) => e.pubkey !== nostr.activeUser!)
+    )
+  )
 }

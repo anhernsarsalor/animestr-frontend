@@ -107,6 +107,8 @@
 	<br />
 {:else if node.type === 'thematicBreak'}
 	<hr />
+{:else if node.type === 'html'}
+	{node.value}
 {:else}
 	<p>
 		Unknown node: {JSON.stringify(node)}, if you see this, please let

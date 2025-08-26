@@ -9,6 +9,7 @@ export const filterNoReplies = map((events: Event[]) =>
 
 export const filterOnlyDirectReplies = (parent: Event) => map((events: Event[]) =>
   events.filter(e => {
+    if (e.kind !== 1) return true;
     const eTags = e.tags.filter(tag => tag[0] === "e");
 
     const isDirectReply = eTags.some(tag => tag[1] === parent.id && tag[3] === "reply");

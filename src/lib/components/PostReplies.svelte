@@ -9,10 +9,16 @@
 
 	let { parent }: { parent: Event } = $props();
 
-	const replies = timelineLoader({
-		kinds: [1],
-		'#e': [parent.id]
-	}).pipe(filterOnlyDirectReplies(parent));
+	const replies = timelineLoader(
+		{
+			kinds: [1],
+			'#e': [parent.id]
+		},
+		{
+			kinds: [24],
+			'#q': [parent.id]
+		}
+	).pipe(filterOnlyDirectReplies(parent));
 </script>
 
 <div
