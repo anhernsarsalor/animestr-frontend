@@ -4,7 +4,7 @@
 	import UserAvatar from './UserAvatar.svelte';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import type { Event } from 'nostr-tools';
-	import { createEvent } from '$lib';
+	import { createEvent, eventFactory } from '$lib';
 
 	const carta = new Carta({
 		sanitizer: false,
@@ -25,12 +25,15 @@
 			if (replyTo.kind === 24) {
 				event.kind = 24;
 				event.tags.push(['q', replyTo.id]);
-			} else {
+			} else if (replyTo.kind === 1) {
 				const root = replyTo.tags.find((t) => t[0] === 'e' && t[3] === 'root')?.[1];
 				if (root) {
 					event.tags.push(['e', root, '', 'root']);
 					event.tags.push(['e', replyTo.id, '', 'reply']);
 				} else event.tags.push(['e', replyTo.id, '', 'root']);
+			} else {
+				event = await eventFactory.comment(replyTo, content, {});
+				event.tags.push(['t', 'animestr']);
 			}
 			event.tags.push(['p', replyTo.pubkey]);
 		}

@@ -11,7 +11,7 @@
 
 	const replies = timelineLoader(
 		{
-			kinds: [1],
+			kinds: [1, 1111],
 			'#e': [parent.id]
 		},
 		{
