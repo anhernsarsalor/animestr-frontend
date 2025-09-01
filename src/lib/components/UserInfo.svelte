@@ -12,8 +12,8 @@
 		inline?: boolean;
 	} = $props();
 
-	let pubkey = normalizeToPubkey(user);
-	let npub = npubEncode(pubkey);
+	let pubkey = $derived(normalizeToPubkey(user));
+	let npub = $derived(npubEncode(pubkey));
 
 	const size = $derived(inline ? 30 : undefined);
 </script>

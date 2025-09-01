@@ -2,6 +2,10 @@
 	import { profileLoader } from '$lib';
 	import { getColorFromPubkey } from '$lib/utils.svelte';
 	import { getProfilePicture, normalizeToPubkey } from 'applesauce-core/helpers';
+	import { loadImage } from '$lib/imagecache';
+	import { untrack } from 'svelte';
+	import { createAvatar } from '@dicebear/core';
+	import { funEmoji } from '@dicebear/collection';
 
 	let {
 		user,
@@ -9,11 +13,43 @@
 		borderWidth = 4
 	}: { user: string; size?: number; borderWidth?: number } = $props();
 
-	let pubkey = normalizeToPubkey(user);
-	let profile = profileLoader(pubkey);
-	let basePicture = $derived(`https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=${pubkey}`);
-	let picture = $derived(getProfilePicture($profile, basePicture));
+	let pubkey = $derived(normalizeToPubkey(user));
+	let profile = $derived(profileLoader(pubkey));
+	let profilePicture = $derived(getProfilePicture($profile));
 	let border = $derived(getColorFromPubkey(pubkey));
+	let basePicture = $derived(
+		createAvatar(funEmoji, {
+			seed: pubkey
+		})
+	);
+
+	let currentPicture = $state('');
+	let isLoading = $state(false);
+
+	async function handleImageLoad() {
+		if (isLoading) return;
+
+		isLoading = true;
+
+		if (profilePicture) {
+			const profileLoaded = await loadImage(profilePicture);
+			if (profileLoaded) {
+				currentPicture = profilePicture;
+				isLoading = false;
+				return;
+			}
+		}
+
+		isLoading = false;
+	}
+
+	$effect(() => {
+		profilePicture;
+
+		untrack(() => {
+			handleImageLoad();
+		});
+	});
 
 	let outerDropletPath = $derived.by(() => {
 		const centerX = size / 2;
@@ -63,24 +99,27 @@
 	<img
 		class="avatar rounded"
 		width={size}
-		src={picture}
-		onerror={(e) => (e.target.src = basePicture)}
+		src={currentPicture}
 		style:border="{borderWidth / 2}px solid {border}"
+		style:opacity={isLoading ? 0.7 : 1}
 	/>
 {:else}
 	<div class="avatar" style:width="{size}px" style:height="{size}px">
 		<svg width={size} height={size} class="block">
 			<defs>
 				<pattern id="img-pattern-{pubkey}" patternUnits="userSpaceOnUse" width="100%" height="100%">
-					<image
-						href={picture}
-						x="0"
-						y="0"
-						width="100%"
-						height="100%"
-						preserveAspectRatio="xMidYMid slice"
-						onerror={(e) => (e.target.href = basePicture)}
-					/>
+					{#if isLoading}
+						{@html basePicture}
+					{:else}
+						<image
+							href={currentPicture}
+							x="0"
+							y="0"
+							width="100%"
+							height="100%"
+							preserveAspectRatio="xMidYMid slice"
+						/>
+					{/if}
 				</pattern>
 				<clipPath id="egg-clip-{pubkey}">
 					<path d={innerDropletPath} />
@@ -96,6 +135,7 @@
 				height={size - borderWidth / 2}
 				fill="url(#img-pattern-{pubkey})"
 				clip-path="url(#egg-clip-{pubkey})"
+				style:opacity={isLoading ? 0.7 : 1}
 			/>
 		</svg>
 	</div>
