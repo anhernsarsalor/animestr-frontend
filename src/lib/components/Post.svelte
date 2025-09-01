@@ -18,12 +18,13 @@
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import PrettyJson from './PrettyJson.svelte';
 	import LongFormArticle from './LongFormArticle.svelte';
+	import { getCommentReplyPointer } from 'applesauce-core/helpers';
 
 	const usersWhoPostNSFWWithoutMarks = [
 		// 'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
 	];
 
-	const { event }: { event: Event } = $props();
+	const { event, direct = false }: { event: Event; direct?: boolean } = $props();
 	dayjs.extend(relativeTime);
 
 	const emoji = $derived(() => {
@@ -59,6 +60,18 @@
 	function cancel() {
 		zapModalOpen = false;
 	}
+
+	let replyToEventId = $derived.by(() => {
+		if (!direct) return;
+		if (event.kind === 1) {
+			const replies = event.tags.filter((t) => t[0] === 'e' && t[3] === 'reply');
+			return replies[replies.length - 1]?.[1];
+		}
+		if (event.kind === 24) return event.tags.filter((t) => t[0] === 'q')[0]?.[1];
+		if (event.kind === 1111) return event.tags.filter((t) => t[0] === 'e')[0]?.[1];
+
+		return;
+	});
 </script>
 
 {#if invoice}
@@ -147,6 +160,10 @@
 			</div>
 			<a class="btn btn-ghost shrink-0" href="/event/{event.id}">#</a>
 		</div>
+
+		{#if replyToEventId}
+			<a class="btn btn-ghost" href="/event/{replyToEventId}">Go to Parent</a>
+		{/if}
 
 		{#if event.kind === 1 || event.kind === 1111 || event.kind === 24}
 			<PostContent
