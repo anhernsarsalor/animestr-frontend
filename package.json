@@ -35,6 +35,8 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.2.4",
+    "@dicebear/core": "^9.2.4",
     "@emoji-mart/data": "^1.2.1",
     "@iconify/svelte": "^5.0.0-beta.1",
     "@vercel/analytics": "^1.5.0",
