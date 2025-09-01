@@ -2,7 +2,7 @@ import { EventStore, mapEventsToStore } from "applesauce-core";
 import { createAddressLoader, createEventLoader, createTimelineLoader } from "applesauce-loaders/loaders";
 import { onlyEvents, RelayPool } from "applesauce-relay";
 import type { Event, Filter } from "nostr-tools";
-import { openDB, getEventsForFilters, addEvents } from "nostr-idb";
+import { openDB, getEventsForFilters, addEvents, type NostrIDB } from "nostr-idb";
 import { bufferTime, filter, map, scan, startWith } from "rxjs";
 import { isEventPointer, isFromCache } from "applesauce-core/helpers";
 import { EventFactory, type EventFactoryTemplate, type EventOperation } from "applesauce-factory";
@@ -20,7 +20,11 @@ export function keepAliveRequest(relays: string[], filters: Filter[]) {
   )
 }
 
-const cache = browser ? await openDB() : null;
+let cache: NostrIDB | null = null;
+(async () => {
+  if (browser)
+    cache = await openDB();
+})();
 
 export const eventStore = new EventStore();
 
