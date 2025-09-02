@@ -1,3 +1,25 @@
+type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+interface Toast {
+  id: string;
+  message: string;
+  type: ToastType;
+}
+
+
+export const toasts = $state<Toast[]>([]);
+
+export function showToast(message: string, type: ToastType = 'success', duration = 3000) {
+  const id = Math.random().toString(32);
+  toasts.push({
+    id, message, type
+  })
+
+  setTimeout(() => {
+    toasts.splice(toasts.findIndex(t => t.id === id), 1);
+  }, duration);
+}
+
 export function unique<T>(arr: T[], fn: (el: T) => unknown) {
   const fnOfArr = arr.map(fn);
   return arr.filter((el, index) => fnOfArr.indexOf(fn(el)) === index);

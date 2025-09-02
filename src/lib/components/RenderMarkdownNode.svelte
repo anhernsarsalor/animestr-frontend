@@ -8,6 +8,7 @@
 	import UserInfo from './UserInfo.svelte';
 	import AnimeReference from './AnimeReference.svelte';
 	import Katex from 'svelte-katex';
+	import RenderCashuToken from './RenderCashuToken.svelte';
 
 	let {
 		node,
@@ -109,6 +110,8 @@
 	<hr />
 {:else if node.type === 'html'}
 	{node.value}
+{:else if node.type === 'cashuToken'}
+	<RenderCashuToken token={node.value} />
 {:else}
 	<p>
 		Unknown node: {JSON.stringify(node)}, if you see this, please let

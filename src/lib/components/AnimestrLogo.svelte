@@ -25,7 +25,7 @@
 {/snippet}
 
 {#if link}
-	<a href="https://animestr.vercel.app">
+	<a href="https://animestr.xyz/{link}">
 		{@render content()}
 	</a>
 {:else}

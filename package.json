@@ -35,6 +35,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@cashu/cashu-ts": "^2.7.1",
     "@dicebear/collection": "^9.2.4",
     "@dicebear/core": "^9.2.4",
     "@emoji-mart/data": "^1.2.1",

@@ -646,22 +646,22 @@ describe('Markdown parsing', () => {
       })
     })
 
-    test('should parse animestr logo', async () => {
+    test('should handle plaintext animestr as text', async () => {
       let parsed = await parseMarkdown('animestr');
       expect(parsed).toEqual({
         type: 'root',
         children: [{
           type: 'paragraph',
           children: [{
-            type: 'animestr-logo',
-            link: null
+            type: 'text',
+            value: 'animestr'
           }]
         }]
       })
     })
 
     test('should parse animestr logo on url', async () => {
-      let parsed = await parseMarkdown('https://animestr.vercel.app/');
+      let parsed = await parseMarkdown('https://animestr.xyz/');
       expect(parsed).toEqual({
         type: 'root',
         children: [{
@@ -669,6 +669,22 @@ describe('Markdown parsing', () => {
           children: [{
             type: 'animestr-logo',
             link: '/'
+          }]
+        }]
+      })
+    })
+  })
+
+  describe('cashu', () => {
+    test('should parse cashu tokens', async () => {
+      let parsed = await parseMarkdown('cashuBo2FtcWh0dHBzOi8vMjFtaW50Lm1lYXVjc2F0YXSBomFpSAAyv8nc6R3uYXCBpGFhAWFzeEA4ODNiZTUwMDc2ZjIyOGFmZjg0OTZjNDE1NTFlZDk3ZWQ5YjAyMTQ2YWUxMzk3ZDRiNzZkOGM4YWZjZjc0M2NkYWNYIQKZdDN4jOSkXTxQZDHKeHEUMX9TMw_7dLB0UNkdX0bWwmFko2FlWCB0_NGL4OZ-_Qe2ClhGx1O7y8PD8gJ_oV_KtClBhdQqT2FzWCBmfReclbDPpwTb_bIKXBSTlw0-F-qxiSncs_UwnsjwFGFyWCBUATMbVcvWAdQdnkWgVop-N98NKF0Pyi7fAOszksVrlw');
+      expect(parsed).toEqual({
+        type: 'root',
+        children: [{
+          type: 'paragraph',
+          children: [{
+            type: 'cashuToken',
+            value: 'cashuBo2FtcWh0dHBzOi8vMjFtaW50Lm1lYXVjc2F0YXSBomFpSAAyv8nc6R3uYXCBpGFhAWFzeEA4ODNiZTUwMDc2ZjIyOGFmZjg0OTZjNDE1NTFlZDk3ZWQ5YjAyMTQ2YWUxMzk3ZDRiNzZkOGM4YWZjZjc0M2NkYWNYIQKZdDN4jOSkXTxQZDHKeHEUMX9TMw_7dLB0UNkdX0bWwmFko2FlWCB0_NGL4OZ-_Qe2ClhGx1O7y8PD8gJ_oV_KtClBhdQqT2FzWCBmfReclbDPpwTb_bIKXBSTlw0-F-qxiSncs_UwnsjwFGFyWCBUATMbVcvWAdQdnkWgVop-N98NKF0Pyi7fAOszksVrlw'
           }]
         }]
       })

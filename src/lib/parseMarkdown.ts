@@ -325,6 +325,37 @@ export const remarkRuby = () => (tree: Node) =>
     return idx + kids.length;
   });
 
+export const remarkCashu = () => (tree: Node) =>
+  visit(tree, 'text', (node, idx, parent) => {
+    if (!parent || parent.type === 'link' || parent.type === 'linkReference') return;
+
+    const matches = Array.from(node.value.matchAll(/cashu[AB][A-Za-z0-9_-]+=*/g));
+    if (!matches.length) return;
+
+    const kids = [];
+    let last = 0;
+
+    for (const m of matches) {
+      const [full] = m;
+      const start = m.index!;
+      const end = start + full.length;
+
+      if (start > last) kids.push({ type: 'text', value: node.value.slice(last, start) });
+
+      kids.push({
+        type: 'cashuToken',
+        value: full,
+      });
+
+      last = end;
+    }
+
+    if (last < node.value.length) kids.push({ type: 'text', value: node.value.slice(last) });
+
+    parent.children.splice(idx, 1, ...kids);
+    return idx + kids.length;
+  });
+
 // TODO:
 // // processCashu
 // // process Lightning
@@ -344,6 +375,7 @@ const processor = unified()
   .use(remarkEmoji)
   .use(remarkAnimestrLogo)
   .use(remarkRuby)
+  .use(remarkCashu)
 
 export async function parseMarkdown(markdown: string) {
   const parseTree = processor.parse(markdown);
