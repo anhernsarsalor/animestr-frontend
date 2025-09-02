@@ -246,7 +246,7 @@ export const remarkAnimestrLogo = () => (tree: Node) => {
   visit(tree, 'text', (node, idx, parent) => {
     if (!parent || parent.type === 'link' || parent.type === 'linkReference') return;
 
-    const matches = Array.from(node.value.matchAll(/[#﹟＃]?animestr/ig));
+    const matches = Array.from(node.value.matchAll(/[#﹟＃]animestr/ig));
     if (!matches.length) return;
 
     const kids = [];
