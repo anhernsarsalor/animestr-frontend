@@ -1,4 +1,3 @@
-import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ params }) => {
@@ -12,7 +11,24 @@ export const GET: RequestHandler = ({ params }) => {
         anhern: "74fb3ef27cd8985d7fefc6e94d178290275f5492557b4a166ab9cd1458adabc7",
         "anhern-sarsalor": "74fb3ef27cd8985d7fefc6e94d178290275f5492557b4a166ab9cd1458adabc7"
       }
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
     }
   )
 }
 
+export const OPTIONS: RequestHandler = () => {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
+  });
+}

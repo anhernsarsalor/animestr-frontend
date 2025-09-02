@@ -274,12 +274,16 @@ export const remarkAnimestrLogo = () => (tree: Node) => {
 
   visit(tree, 'link', (node, idx, parent) => {
     if (!parent) return;
-    let prefix = 'https://animestr.vercel.app';
-    if (node.url.startsWith(prefix))
-      parent.children[idx] = {
-        type: 'animestr-logo',
-        link: node.url.substring(prefix.length) || "/"
+    const animestrPrefixes = ['https://animestr.xyz', 'https://www.animestr.xyz', 'https://animestr.vercel.app'];
+    for (let prefix of animestrPrefixes) {
+      if (node.url.startsWith(prefix)) {
+        parent.children[idx] = {
+          type: 'animestr-logo',
+          link: node.url.substring(prefix.length) || "/"
+        }
+        return;
       }
+    }
   })
 }
 
