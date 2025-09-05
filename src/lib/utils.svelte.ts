@@ -1,3 +1,6 @@
+import { getOrComputeCachedValue, type ProfileContent } from "applesauce-core/helpers";
+import { nip05, type NostrEvent } from "nostr-tools";
+
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface Toast {
@@ -160,3 +163,61 @@ export function normalizeWatchStatus(status?: WatchStatus | string | number) {
     return (WatchStatus as any)[(WatchStatus as any)[status]]
   return WatchStatus.Unknown;
 }
+
+type AnimestrProfile = Omit<Omit<ProfileContent, 'nip05'>, 'lud16'> & {
+  nip05: string[];
+  lud16: string[];
+  [key: string]: string | string[];
+};
+
+export const ProfileContentSymbol = Symbol.for("animestrprofile-content");
+
+export function getProfileContent(profile: NostrEvent): AnimestrProfile {
+  return getOrComputeCachedValue(profile, ProfileContentSymbol, () => {
+    if (profile.kind !== 0)
+      throw new Error("Invalid event: Expected profile event (kind 0)");
+    let content: AnimestrProfile;
+    try {
+      content = JSON.parse(profile.content);
+    } catch (error) {
+      throw new Error("Invalid profile content: Unable to parse JSON");
+    }
+
+    if (profile.tags?.length > 0) {
+      for (const tag of profile.tags) {
+        if (tag.length < 2) continue;
+
+        const [key, value] = tag;
+        if (key === 'alt') continue;
+
+        if (key === "nip05" || key === "lud16") {
+          if (!content[key])
+            content[key] = [];
+          if (Array.isArray(content[key]))
+            content[key].push(value);
+          else
+            content[key] = [content[key], value];
+        } else
+          content[key] = value;
+      }
+    }
+
+    const nip05Values = Array.isArray(content.nip05) ? content.nip05 : [content.nip05];
+    const lud16Values = Array.isArray(content.lud16) ? content.lud16 : [content.lud16];
+
+    content.nip05 = [...new Set(nip05Values)].filter(Boolean);
+    content.lud16 = [...new Set(lud16Values)].filter(Boolean);
+
+    return content;
+  });
+}
+
+const nip05Symbol = Symbol.for('nip05Validation')
+
+export const isValidNip05 = (pubkey: string) => (addr: string) => getOrComputeCachedValue([pubkey, addr], nip05Symbol, async () => {
+  try {
+    return await nip05.isValid(pubkey, addr as `${string}@${string}`);
+  } catch {
+    return false;
+  }
+})

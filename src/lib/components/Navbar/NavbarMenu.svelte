@@ -30,6 +30,10 @@
 					<Icon icon="ph:package-duotone" />
 					Emoji Packs
 				</a>
+				<a href="/shousetsu">
+					<Icon icon="ic:twotone-menu-book" />
+					Novel Nodes
+				</a>
 			</li>
 		</ul>
 	</div>

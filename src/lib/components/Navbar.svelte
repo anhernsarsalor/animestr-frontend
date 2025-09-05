@@ -131,8 +131,8 @@
 					</a>
 				</li>
 				<li>
-					<a href="/settings">
-						<Icon icon="line-md:pencil-twotone" /> Settings <!-- TODO: find a better icon for setting -->
+					<a href="/profile">
+						<Icon icon="line-md:pencil-twotone" /> Edit Profile
 					</a>
 				</li>
 				<li>
