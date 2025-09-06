@@ -1,10 +1,17 @@
 <script lang="ts">
+	import type { Event } from 'nostr-tools';
 	import EventList from '$lib/components/EventList.svelte';
 	import { page } from '$app/state';
 	import Loading from '$lib/components/Loading.svelte';
 	import { filterNoReplies } from '$lib/nostr/filterEvents.svelte';
 	import UserAvatar from '$lib/components/UserAvatar.svelte';
-	import { profileLoader, timelineLoader } from '$lib';
+	import {
+		badgesLoader,
+		eventLoader,
+		profileLoader,
+		simpleAddressLoader,
+		timelineLoader
+	} from '$lib';
 	import { getDisplayName, normalizeToPubkey, type ProfileContent } from 'applesauce-core/helpers';
 	import WatchList from '$lib/components/WatchList.svelte';
 	import { npubEncode } from 'nostr-tools/nip19';
@@ -13,7 +20,8 @@
 	import { getProfileContent } from '$lib/utils.svelte';
 	import RenderNip05Check from '$lib/components/RenderNip05Check.svelte';
 	import { dev } from '$app/environment';
-	import { EMPTY } from 'rxjs';
+	import { EMPTY, filter, from, map, mergeMap, scan, startWith, switchMap, toArray } from 'rxjs';
+	import BadgeDisplay from '$lib/components/BadgeDisplay.svelte';
 
 	let pubkey = $derived(normalizeToPubkey(page.params.id));
 	let npub = $derived(npubEncode(pubkey));
@@ -31,6 +39,8 @@
 			authors: [pubkey]
 		}).pipe(filterNoReplies)
 	);
+
+	const awardedBadges = $derived(badgesLoader(pubkey));
 
 	const allEvents = $derived(
 		dev
@@ -55,7 +65,7 @@
 	{#key page.params.id}
 		<div class="container mx-auto max-w-3xl p-4">
 			{#if profile?.banner}
-				<div class="relative mb-6 h-40 w-full overflow-hidden rounded-lg md:h-60">
+				<div class="relative h-40 w-full overflow-hidden rounded-lg md:h-60">
 					<img
 						src={profile.banner}
 						alt="User banner"
@@ -66,33 +76,36 @@
 					></div>
 				</div>
 			{/if}
-			<div class="bg-base-200 mb-6 flex w-full flex-row items-end gap-2 rounded-lg p-6 shadow-sm">
-				<div class:-mt-20={profile?.banner} class="avatar">
-					<UserAvatar size={100} user={pubkey} />
-				</div>
+			<div class="bg-base-200 mb-6 rounded-lg p-6 shadow-sm">
+				<div class="flex w-full flex-row items-end gap-2">
+					<div class:-mt-20={profile?.banner} class="avatar">
+						<UserAvatar size={100} user={pubkey} />
+					</div>
 
-				<div class="inline-flex flex-col">
-					<h1 class="mb-1 text-2xl font-bold">
-						{#if isLoading}
-							<Loading inline />
-						{:else}
-							{username}
-						{/if}
-					</h1>
+					<div class="inline-flex flex-col">
+						<h1 class="mb-1 text-2xl font-bold">
+							{#if isLoading}
+								<Loading inline />
+							{:else}
+								{username}
+							{/if}
+						</h1>
 
-					{#if profile}
-						{#if profile.nip05.length > 0}
-							{#each profile.nip05 as nip05}
-								{#key nip05}
-									<RenderNip05Check {nip05} {pubkey} />
-								{/key}
-							{/each}
+						{#if profile}
+							{#if profile.nip05.length > 0}
+								{#each profile.nip05 as nip05}
+									{#key nip05}
+										<RenderNip05Check {nip05} {pubkey} />
+									{/key}
+								{/each}
+							{/if}
 						{/if}
-					{/if}
-					<div class="text-base-content/70 mb-3 font-mono text-sm">
-						{npub}
+						<div class="text-base-content/70 mb-3 font-mono text-sm">
+							{npub}
+						</div>
 					</div>
 				</div>
+				<BadgeDisplay badges={$awardedBadges} />
 			</div>
 
 			<div class="tabs tabs-box">
