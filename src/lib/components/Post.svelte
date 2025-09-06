@@ -18,13 +18,16 @@
 	import { nostr } from '$lib/stores/signerStore.svelte';
 	import PrettyJson from './PrettyJson.svelte';
 	import LongFormArticle from './LongFormArticle.svelte';
-	import { getCommentReplyPointer } from 'applesauce-core/helpers';
 
 	const usersWhoPostNSFWWithoutMarks = [
 		// 'bd2f96f56347abe90464d1c220d093e325fe41212926b9eb8c056c5f6ab08280' // sorry anime waifu daily
 	];
 
-	const { event, direct = false }: { event: Event; direct?: boolean } = $props();
+	const {
+		event,
+		direct = false,
+		level = 0
+	}: { event: Event; direct?: boolean; level?: number } = $props();
 	dayjs.extend(relativeTime);
 
 	const emoji = $derived(() => {
@@ -142,8 +145,12 @@
 </dialog>
 
 <div
-	class="card bg-base-200 border-base-300 border shadow-sm transition-all hover:shadow-md"
+	class="card post-card bg-base-200 border-base-300 border shadow-sm transition-all hover:shadow-md"
 	transition:scale
+	style:border-left={level > 0
+		? `2px solid rgba(from var(--color-secondary) r g b / ${level / 10})`
+		: 'none'}
+	style:box-shadow={level > 0 ? 'none' : 'var(--tw-shadow)'}
 >
 	<div class="card-body gap-4 p-4">
 		<div class="flex items-start justify-between">
@@ -161,7 +168,7 @@
 			<a class="btn btn-ghost shrink-0" href="/event/{event.id}">#</a>
 		</div>
 
-		{#if replyToEventId}
+		{#if replyToEventId && level == 0}
 			<a class="btn btn-ghost" href="/event/{replyToEventId}">Go to Parent</a>
 		{/if}
 
@@ -228,7 +235,7 @@
 				<summary class="collapse-title">Replies</summary>
 				<div class="collapse-content">
 					{#if repliesVisible}
-						<PostReplies parent={event} />
+						<PostReplies parent={event} level={level + 1} />
 					{:else}
 						<Loading inline />
 					{/if}

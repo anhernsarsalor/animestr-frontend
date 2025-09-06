@@ -7,7 +7,13 @@
 	import { timelineLoader } from '$lib';
 	import { nostr } from '$lib/stores/signerStore.svelte';
 
-	let { parent }: { parent: Event } = $props();
+	let {
+		parent,
+		level
+	}: {
+		parent: Event;
+		level: number;
+	} = $props();
 
 	const replies = timelineLoader(
 		{
@@ -21,16 +27,21 @@
 	).pipe(filterOnlyDirectReplies(parent));
 </script>
 
-<div
-	class="card bg-base-200 border-base-300 border p-4 shadow-sm transition-all hover:shadow-md"
-	transition:slide
->
+<div class="reply-thread" transition:slide>
 	{#if nostr.activeUser}
 		<NewPostEditor replyTo={parent} />
 	{/if}
-	{#each $replies as reply}
-		<Post event={reply} />
-	{:else}
-		No replies yet!
-	{/each}
+	<div class="flex flex-col gap-2">
+		{#each $replies as reply}
+			<Post event={reply} direct={true} level={level + 1} />
+		{:else}
+			<span class="text-sm text-base-content/50">No replies yet!</span>
+		{/each}
+	</div>
 </div>
+
+<style>
+	.reply-thread {
+		margin-bottom: 0.5rem;
+	}
+</style>
