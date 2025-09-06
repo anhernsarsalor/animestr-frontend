@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+EXTENSIONS = %w[.ts .json .css .html .svelte].freeze
+
+files = `git diff --cached --name-only --diff-filter=ACM`
+    .split("\n")
+    .select { |file| EXTENSIONS.any? { |ext| file.end_with?(ext) } }
+    .select(&File.method(:exist?))
+
+exit 0 if files.empty?
+
+files.each do |file|
+  system("bunx", "prettier", "--write", file) &&
+    system("git", "add", file) ||
+    abort("💥 Prettier stumbled on #{file}")
+end
