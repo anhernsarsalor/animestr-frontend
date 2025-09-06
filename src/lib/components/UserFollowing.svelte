@@ -13,8 +13,7 @@
 			pubkey: normalizeToPubkey(pubkey)
 		}).pipe(
 			map((t) => t.tags.filter((t) => t[0] === 'p')),
-			map((t) => t.map((t) => t[1])),
-			tap(console.log)
+			map((t) => t.map((t) => t[1]))
 		)
 	);
 </script>

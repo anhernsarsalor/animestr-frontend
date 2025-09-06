@@ -50,7 +50,7 @@ export const remarkNostrMentions = () => (tree: Node) =>
   visit(tree, 'text', (node, idx, parent) => {
     if (!parent || parent.type === 'link' || parent.type === 'linkReference') return;
 
-    const matches = Array.from(node.value.matchAll(/(^|\s)(nostr:)?\b(npub1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{58}|nprofile1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{58,})\b/g));
+    const matches = Array.from(node.value.matchAll(/(^|\s)(nostr:){0,}\b(npub1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{58}|nprofile1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{58,})\b/g));
     if (!matches.length) return;
 
     const kids = [];

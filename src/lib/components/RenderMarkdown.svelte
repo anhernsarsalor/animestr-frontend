@@ -12,8 +12,6 @@
 	} = $props();
 
 	let parsed = $derived(parseMarkdown(markdown));
-
-	$inspect(parsed);
 </script>
 
 {#await parsed}

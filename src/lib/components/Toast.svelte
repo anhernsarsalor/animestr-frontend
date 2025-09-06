@@ -8,8 +8,6 @@
 		info: 'tabler:info-circle-filled',
 		warning: 'tabler:alert-triangle-filled'
 	};
-
-	$inspect(toasts);
 </script>
 
 <div class="toast toast-top toast-end z-[9999]">
